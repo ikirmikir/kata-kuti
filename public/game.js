@@ -39,11 +39,8 @@ async function main() {
   $("code").oninput = () => { $("code").value = $("code").value.toUpperCase().replace(/[^A-Z0-9]/g, ""); say("joinMsg", "Ask your friend for their 5-letter code.") };
   $("name").oninput = () => say("createMsg", "Friends will see this name. Change it if you like.");
   $("local").onclick = () => { online = false; wins = { X: 0, O: 0 }; startRound(0) };
-  $("invite").onclick = $("roomTag").onclick = $("sheetShare").onclick = () => room?.invite(); // SDK: share sheet with the invite link
-  $("cancel").onclick = $("quit").onclick = $("sheetLeave").onclick = leaveGame;
-  $("more").onclick = openSheet;
-  $("sheet").querySelector("[data-close]").onclick = closeSheet;
-  addEventListener("keydown", e => { if (e.key === "Escape") closeSheet() });
+  $("invite").onclick = $("roomTag").onclick = () => room?.invite();    // SDK: share sheet with the invite link
+  $("cancel").onclick = $("quit").onclick = leaveGame;
   $("again").onclick = () => { if (online) room.send({ t: "again", round: round + 1 }); startRound(round + 1) };
 
   // SDK: someone opened an invite link to a room, so join it straight away
@@ -51,22 +48,7 @@ async function main() {
   else show("home");
 }
 
-function leaveGame() { closeSheet(true); room?.leave(); room = null; ik.game.gameplayStop(); show("home") }
-
-// ---------- the phone sheet: room code, share, leave ----------
-function openSheet() {
-  $("sheetRoom").hidden = !online || !room;
-  $("sheetCode").textContent = room?.code ?? "";
-  $("sheet").classList.remove("closing"); $("sheet").hidden = false;
-  (online && room ? $("sheetShare") : $("sheetLeave")).focus({ preventScroll: true });
-}
-function closeSheet(now) {
-  const s = $("sheet");
-  if (s.hidden) return;
-  if (now === true) { s.hidden = true; return }
-  s.classList.add("closing");
-  setTimeout(() => { if (s.classList.contains("closing")) { s.hidden = true; s.classList.remove("closing") } }, 220);
-}
+function leaveGame() { room?.leave(); room = null; ik.game.gameplayStop(); show("home") }
 
 // ---------- names ----------
 function savedName() { try { return localStorage.getItem("kata-kuti-name") ?? "" } catch { return "" } }
@@ -118,7 +100,7 @@ async function enter(request, msg, waitText) {
   $("roomTagCode").textContent = room.code;
   me = room.players[0].id === room.you.id ? "X" : "O";                   // whoever made the room plays X
   room.on("join", () => startRound(0));
-  room.on("leave", p => { gameOff(); say("notice", `${p.name} left the game.`); $("again").hidden = true });
+  room.on("leave", p => { gameOff(); over = over || { left: true }; render(); say("notice", `${p.name} left the game.`); $("again").hidden = true }); // the round stops
   room.on("away", p => say("notice", `${p.name}'s connection dropped. Waiting for them…`));
   room.on("back", () => { say("notice", ""); room.send({ t: "state", board, round, turn, over, wins }) }); // catch them up
   room.on("status", s => say("notice", s === "reconnecting" ? "Reconnecting…" : s === "closed" ? "Connection lost." : ""));
@@ -167,12 +149,12 @@ function render() {
   for (const m of ["X", "O"]) {
     const side = $(`side${m}`);
     side.querySelector(".who").textContent = nameOf(m);
+    side.querySelector(".wins").textContent = wins[m];
     side.classList.toggle("now", !over && turn === m);
     side.classList.toggle("you", online && m === me);
   }
-  $("score").textContent = `${wins.X} · ${wins.O}`;
   const text = over
-    ? (over.winner ? (nameOf(over.winner) === "You" ? "You win" : `${nameOf(over.winner)} wins`) : "A draw")
+    ? (over.left ? "Game over" : over.winner ? (nameOf(over.winner) === "You" ? "You win" : `${nameOf(over.winner)} wins`) : "A draw")
     : online ? (mine ? "Your move" : `${nameOf(turn)} is thinking…`) : `${nameOf(turn)} to move`;
   if (text !== lastTurnText) {                                            // a new line rises in quietly
     const t = $("turn"); t.textContent = lastTurnText = text; t.classList.remove("fresh"); void t.offsetWidth; t.classList.add("fresh");

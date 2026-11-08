@@ -69,37 +69,25 @@
       </div>
     </section>
 
-    <!-- the game fills the whole frame: names and score along the top, the board in the middle,
-         room code and Leave in the bottom corners (on phones, in a bottom sheet) -->
+    <!-- the game fills the whole frame and never scrolls: players and the turn line along the top, the board in the
+         middle, a small bar along the bottom with the room code and Leave (the same on every screen size) -->
     <section id="play" class="screen game" hidden>
-      <header class="scoreboard">
-        <div class="side" id="sideX"><span class="mark-sm">×</span><span class="who"></span></div>
-        <div class="score" id="score">0 · 0</div>
-        <div class="side right" id="sideO"><span class="who"></span><span class="mark-sm">○</span></div>
-      </header>
-      <p id="turn" class="turn" role="status"></p>
-      <div class="arena"><div id="board" class="board" role="grid" aria-label="Board"></div></div>
-      <p id="notice" class="note" role="status"></p>
-      <div class="again-row"><button id="again" class="btn primary" hidden>Play again</button></div>
-      <footer class="corners">
-        <button id="roomTag" class="room-tag wide-only" hidden aria-label="Share the room code"><span class="label">Room</span> <span id="roomTagCode"></span></button>
-        <button id="quit" class="btn quiet wide-only">Leave</button>
-        <button id="more" class="more phone-only" aria-label="Room code and leave" aria-haspopup="dialog">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>
-        </button>
-      </footer>
-      <div id="sheet" class="sheet" hidden>
-        <div class="sheet-shade" data-close></div>
-        <div class="sheet-panel" role="dialog" aria-modal="true" aria-label="Room">
-          <div class="sheet-grip" aria-hidden="true"></div>
-          <div id="sheetRoom">
-            <p class="label">Room code</p>
-            <p id="sheetCode" class="sheet-code"></p>
-            <button id="sheetShare" class="btn primary">Share invite</button>
-          </div>
-          <button id="sheetLeave" class="btn">Leave game</button>
+      <header class="topline">
+        <ul class="players" aria-label="Players and wins">
+          <li class="side" id="sideX"><span class="mark-sm" aria-hidden="true">×</span><span class="who"></span><span class="wins"></span></li>
+          <li class="side" id="sideO"><span class="mark-sm" aria-hidden="true">○</span><span class="who"></span><span class="wins"></span></li>
+        </ul>
+        <div class="status">
+          <p id="turn" class="turn" role="status"></p>
+          <p id="notice" class="note" role="status"></p>
         </div>
-      </div>
+      </header>
+      <div class="arena"><div id="board" class="board" role="grid" aria-label="Board"></div></div>
+      <div class="again-row"><button id="again" class="btn primary" hidden>Play again</button></div>
+      <footer class="bottombar">
+        <button id="roomTag" class="room-tag" hidden aria-label="Share the room code"><span class="label">Room</span> <span id="roomTagCode"></span></button>
+        <button id="quit" class="btn quiet">Leave</button>
+      </footer>
     </section>
   </main>
   <!-- The Ikirmikir SDK file, copied next to the game (gives window.Ikirmikir). -->
