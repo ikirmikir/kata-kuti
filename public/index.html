@@ -44,9 +44,19 @@
       <h2>Room code</h2>
       <div class="inline">
         <input id="code" class="code-input" maxlength="5" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="·····" aria-label="Room code">
-        <button id="join-go" class="btn primary icon" aria-label="Join">→</button>
+        <button id="join-go" class="btn primary icon" aria-label="Next">→</button>
       </div>
       <p id="joinMsg" class="note" role="status">Ask your friend for their 5-letter code.</p>
+    </section>
+
+    <section id="joinName" class="screen" hidden>
+      <button class="back" data-to="join" aria-label="Back">←</button>
+      <h2>Your name</h2>
+      <div class="inline">
+        <input id="name2" maxlength="16" autocomplete="nickname" spellcheck="false" aria-label="Your name">
+        <button id="play-go" class="btn primary">Play</button>
+      </div>
+      <p id="joinNameMsg" class="note" role="status"></p>
     </section>
 
     <section id="waiting" class="screen" hidden>
