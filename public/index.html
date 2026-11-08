@@ -7,36 +7,56 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <!-- a faint oversized board behind everything, so it is clear what this game is -->
+  <svg class="backdrop" viewBox="0 0 300 300" aria-hidden="true"><path d="M100 0V300M200 0V300M0 100H300M0 200H300"/></svg>
+
   <main id="app">
-    <section id="menu" class="screen">
-      <header class="title">
-        <p class="label">Noughts and crosses</p>
-        <h1>Kata-kuti</h1>
-        <p class="bn" lang="bn">কাটাকুটি</p>
-      </header>
+    <section id="home" class="screen">
+      <svg class="logo" viewBox="0 0 120 120" role="img" aria-label="A noughts and crosses board">
+        <path class="grid" pathLength="100" d="M44 10V110M76 10V110M10 44H110M10 76H110"/>
+        <path class="x" pathLength="100" d="M17 17L37 37M37 17L17 37"/>
+        <circle class="o" pathLength="100" cx="60" cy="60" r="10"/>
+        <path class="x x2" pathLength="100" d="M83 83L103 103M103 83L83 103"/>
+      </svg>
+      <h1>Kata-kuti</h1>
       <div id="online" class="stack">
-        <label class="field">
-          <span class="label">Your name <em>optional</em></span>
-          <input id="name" maxlength="16" autocomplete="nickname" spellcheck="false" placeholder="Anonymous">
-        </label>
-        <button id="create" class="btn primary">Play with a friend</button>
-        <div class="join">
-          <input id="code" maxlength="5" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="ROOM CODE" aria-label="Room code">
-          <button id="join" class="btn">Join</button>
-        </div>
+        <button id="toCreate" class="btn primary">Create a room</button>
+        <button id="toJoin" class="btn">Join a room</button>
       </div>
       <p id="offlineNote" class="note" hidden>Open this game on ikirmikir.com to play with a friend online.</p>
       <div class="divider"><span>or</span></div>
       <button id="local" class="btn quiet">Play on this device</button>
-      <p id="menuMsg" class="note" role="status"></p>
+      <p id="homeMsg" class="note" role="status"></p>
+    </section>
+
+    <section id="create" class="screen" hidden>
+      <button class="back" data-to="home" aria-label="Back">←</button>
+      <h2>Your name</h2>
+      <div class="inline">
+        <input id="name" maxlength="16" autocomplete="nickname" spellcheck="false" aria-label="Your name">
+        <button id="create-go" class="btn primary">Create</button>
+      </div>
+      <p id="createMsg" class="note" role="status">Friends will see this name. Change it if you like.</p>
+    </section>
+
+    <section id="join" class="screen" hidden>
+      <button class="back" data-to="home" aria-label="Back">←</button>
+      <h2>Room code</h2>
+      <div class="inline">
+        <input id="code" class="code-input" maxlength="5" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="·····" aria-label="Room code">
+        <button id="join-go" class="btn primary icon" aria-label="Join">→</button>
+      </div>
+      <p id="joinMsg" class="note" role="status">Ask your friend for their 5-letter code.</p>
     </section>
 
     <section id="waiting" class="screen" hidden>
       <p class="label">Room code</p>
       <p id="roomCode" class="code"></p>
       <p class="note"><span class="pulse" aria-hidden="true"></span>Waiting for a friend to join</p>
-      <button id="invite" class="btn primary">Invite a friend</button>
-      <button id="cancel" class="btn quiet">Cancel</button>
+      <div class="pair">
+        <button id="invite" class="btn primary">Share</button>
+        <button id="cancel" class="btn">Cancel</button>
+      </div>
     </section>
 
     <section id="play" class="screen" hidden>
@@ -52,7 +72,6 @@
         <button id="again" class="btn primary" hidden>Play again</button>
         <button id="quit" class="btn quiet">Leave</button>
       </div>
-      <div id="splash" class="splash" aria-hidden="true">Your move</div>
     </section>
   </main>
   <!-- The Ikirmikir SDK file, copied next to the game (gives window.Ikirmikir). -->
