@@ -69,19 +69,36 @@
       </div>
     </section>
 
-    <section id="play" class="screen" hidden>
-      <div class="scoreboard">
+    <!-- the game fills the whole frame: names and score along the top, the board in the middle,
+         room code and Leave in the bottom corners (on phones, in a bottom sheet) -->
+    <section id="play" class="screen game" hidden>
+      <header class="scoreboard">
         <div class="side" id="sideX"><span class="mark-sm">×</span><span class="who"></span></div>
         <div class="score" id="score">0 · 0</div>
         <div class="side right" id="sideO"><span class="who"></span><span class="mark-sm">○</span></div>
-      </div>
+      </header>
       <p id="turn" class="turn" role="status"></p>
-      <div id="board" class="board" role="grid" aria-label="Board"></div>
+      <div class="arena"><div id="board" class="board" role="grid" aria-label="Board"></div></div>
       <p id="notice" class="note" role="status"></p>
-      <div class="actions">
-        <button id="again" class="btn primary" hidden>Play again</button>
-        <button id="roomTag" class="room-tag" hidden aria-label="Share the room code"><span class="label">Room</span> <span id="roomTagCode"></span></button>
-        <button id="quit" class="btn quiet">Leave</button>
+      <div class="again-row"><button id="again" class="btn primary" hidden>Play again</button></div>
+      <footer class="corners">
+        <button id="roomTag" class="room-tag wide-only" hidden aria-label="Share the room code"><span class="label">Room</span> <span id="roomTagCode"></span></button>
+        <button id="quit" class="btn quiet wide-only">Leave</button>
+        <button id="more" class="more phone-only" aria-label="Room code and leave" aria-haspopup="dialog">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>
+        </button>
+      </footer>
+      <div id="sheet" class="sheet" hidden>
+        <div class="sheet-shade" data-close></div>
+        <div class="sheet-panel" role="dialog" aria-modal="true" aria-label="Room">
+          <div class="sheet-grip" aria-hidden="true"></div>
+          <div id="sheetRoom">
+            <p class="label">Room code</p>
+            <p id="sheetCode" class="sheet-code"></p>
+            <button id="sheetShare" class="btn primary">Share invite</button>
+          </div>
+          <button id="sheetLeave" class="btn">Leave game</button>
+        </div>
       </div>
     </section>
   </main>

@@ -39,13 +39,33 @@ async function main() {
   $("code").oninput = () => { $("code").value = $("code").value.toUpperCase().replace(/[^A-Z0-9]/g, ""); say("joinMsg", "Ask your friend for their 5-letter code.") };
   $("name").oninput = () => say("createMsg", "Friends will see this name. Change it if you like.");
   $("local").onclick = () => { online = false; wins = { X: 0, O: 0 }; startRound(0) };
-  $("invite").onclick = $("roomTag").onclick = () => room?.invite();     // SDK: share sheet with this room's invite link
-  $("cancel").onclick = $("quit").onclick = () => { room?.leave(); room = null; ik.game.gameplayStop(); show("home") };
+  $("invite").onclick = $("roomTag").onclick = $("sheetShare").onclick = () => room?.invite(); // SDK: share sheet with the invite link
+  $("cancel").onclick = $("quit").onclick = $("sheetLeave").onclick = leaveGame;
+  $("more").onclick = openSheet;
+  $("sheet").querySelector("[data-close]").onclick = closeSheet;
+  addEventListener("keydown", e => { if (e.key === "Escape") closeSheet() });
   $("again").onclick = () => { if (online) room.send({ t: "again", round: round + 1 }); startRound(round + 1) };
 
   // SDK: someone opened an invite link to a room, so join it straight away
   if (ik.multiplayer.invite) { $("code").value = ik.multiplayer.invite; toJoinName() }
   else show("home");
+}
+
+function leaveGame() { closeSheet(true); room?.leave(); room = null; ik.game.gameplayStop(); show("home") }
+
+// ---------- the phone sheet: room code, share, leave ----------
+function openSheet() {
+  $("sheetRoom").hidden = !online || !room;
+  $("sheetCode").textContent = room?.code ?? "";
+  $("sheet").classList.remove("closing"); $("sheet").hidden = false;
+  (online && room ? $("sheetShare") : $("sheetLeave")).focus({ preventScroll: true });
+}
+function closeSheet(now) {
+  const s = $("sheet");
+  if (s.hidden) return;
+  if (now === true) { s.hidden = true; return }
+  s.classList.add("closing");
+  setTimeout(() => { if (s.classList.contains("closing")) { s.hidden = true; s.classList.remove("closing") } }, 220);
 }
 
 // ---------- names ----------
