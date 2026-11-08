@@ -35,7 +35,8 @@ input::placeholder { color: #55534e }
 .btn.primary:hover { background: #fff }
 .btn.quiet { border-color: transparent; color: var(--muted); height: 44px }
 .btn.quiet:hover { color: var(--ink) }
-.btn:focus-visible, input:focus-visible, .cell:focus-visible { outline: 1px solid var(--ink); outline-offset: 3px }
+.btn:focus-visible, .cell:focus-visible { outline: 1px solid var(--ink); outline-offset: 3px }
+input:focus-visible { outline: none } /* focus shows as the bottom line turning light, nothing more */
 
 .divider { display: flex; align-items: center; gap: 14px; color: #55534e; font-size: 12px; letter-spacing: .2em; text-transform: uppercase }
 .divider::before, .divider::after { content: ""; flex: 1; border-top: 1px solid var(--line) }
