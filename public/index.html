@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+  <title>Kata-kuti: noughts and crosses with a friend</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main id="app">
+    <section id="menu" class="screen">
+      <h1>Kata-kuti <span lang="bn">কাটাকুটি</span></h1>
+      <p class="sub">Noughts and crosses. Three in a row wins.</p>
+      <div id="online" class="stack">
+        <button id="create" class="btn">Play with a friend</button>
+        <form id="joinForm" class="row">
+          <input id="code" maxlength="5" autocomplete="off" autocapitalize="characters" placeholder="Room code" aria-label="Room code">
+          <button class="btn ghost">Join</button>
+        </form>
+      </div>
+      <p id="offlineNote" class="note" hidden>Open this game on ikirmikir.com to play with a friend online.</p>
+      <button id="local" class="btn ghost">Play on this device</button>
+      <p id="menuMsg" class="note" role="status"></p>
+    </section>
+
+    <section id="waiting" class="screen" hidden>
+      <p class="sub">Your room code</p>
+      <p id="roomCode" class="code"></p>
+      <p class="note">Send the invite to a friend, or read them the code.</p>
+      <button id="invite" class="btn">Invite a friend</button>
+      <button id="cancel" class="btn ghost">Cancel</button>
+    </section>
+
+    <section id="play" class="screen" hidden>
+      <p id="names" class="names"></p>
+      <p id="turn" class="turn" role="status"></p>
+      <div id="board" class="board" role="grid" aria-label="Board"></div>
+      <p id="notice" class="note" role="status"></p>
+      <div class="row">
+        <button id="again" class="btn" hidden>Play again</button>
+        <button id="quit" class="btn ghost">Menu</button>
+      </div>
+    </section>
+  </main>
+  <!-- The Ikirmikir SDK file, copied next to the game (gives window.Ikirmikir). -->
+  <script src="ikirmikir.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
