@@ -26,20 +26,20 @@ async function main() {
   $("offlineNote").hidden = canPlayOnline;
   ik.game.loadingDone();                                                  // SDK: Ikirmikir hides its loader
 
-  $("toCreate").onclick = () => { $("name").value = savedName() || newName(); show("create"); focus("name") };
-  $("toJoin").onclick = () => { $("code").value = ""; show("join"); focus("code") };
+  $("toCreate").onclick = () => { $("name").value = savedName() || newName(); show("create") };
+  $("toJoin").onclick = () => { $("code").value = ""; show("join") };
   for (const b of document.querySelectorAll(".back")) b.onclick = () => show(b.dataset.to);
   $("create-go").onclick = create;
-  $("name").onkeydown = e => { if (e.key === "Enter") create() };
+  $("name").onkeydown = e => { if (isEnter(e)) create() };
   $("join-go").onclick = toJoinName;
-  $("code").onkeydown = e => { if (e.key === "Enter") toJoinName() };
+  $("code").onkeydown = e => { if (isEnter(e)) toJoinName() };
   $("play-go").onclick = join;
-  $("name2").onkeydown = e => { if (e.key === "Enter") join() };
+  $("name2").onkeydown = e => { if (isEnter(e)) join() };
   $("name2").oninput = () => say("joinNameMsg", `Joining room ${$("code").value}. Your friend will see this name.`);
   $("code").oninput = () => { $("code").value = $("code").value.toUpperCase().replace(/[^A-Z0-9]/g, ""); say("joinMsg", "Ask your friend for their 5-letter code.") };
   $("name").oninput = () => say("createMsg", "Friends will see this name. Change it if you like.");
   $("local").onclick = () => { online = false; wins = { X: 0, O: 0 }; startRound(0) };
-  $("invite").onclick = () => room?.invite();                             // SDK: share sheet with this room's invite link
+  $("invite").onclick = $("roomTag").onclick = () => room?.invite();     // SDK: share sheet with this room's invite link
   $("cancel").onclick = $("quit").onclick = () => { room?.leave(); room = null; ik.game.gameplayStop(); show("home") };
   $("again").onclick = () => { if (online) room.send({ t: "again", round: round + 1 }); startRound(round + 1) };
 
@@ -73,7 +73,7 @@ function toJoinName() {
   $("code").value = code;
   $("name2").value = savedName() || newName();
   say("joinNameMsg", `Joining room ${code}. Your friend will see this name.`);
-  show("joinName"); focus("name2");
+  show("joinName");
 }
 
 async function join() {
@@ -95,6 +95,7 @@ async function enter(request, msg, waitText) {
   }[r.error] ?? "Something went wrong. Try again.", true);
   say(msg, "");
   room = r.room; online = true; wins = { X: 0, O: 0 };
+  $("roomTagCode").textContent = room.code;
   me = room.players[0].id === room.you.id ? "X" : "O";                   // whoever made the room plays X
   room.on("join", () => startRound(0));
   room.on("leave", p => { gameOff(); say("notice", `${p.name} left the game.`); $("again").hidden = true });
@@ -164,6 +165,7 @@ function render() {
     b.setAttribute("aria-label", `Square ${i + 1}${board[i] ? ", " + (board[i] === "X" ? "cross" : "nought") : ""}`);
   });
   $("board").classList.toggle("done", !!over);
+  $("roomTag").hidden = !online || !room;                                 // the code stays in view, in case someone drops out
   $("board").classList.toggle("mine", mine);
 }
 
@@ -184,8 +186,11 @@ function show(id) {
     if (on && s.hidden) { s.hidden = false; s.classList.remove("enter"); void s.offsetWidth; s.classList.add("enter") }
     else if (!on) s.hidden = true;
   }
+  // the screen's field gets focus at once, in the same moment as the tap, so phones keep their keyboard open
+  const field = $(id).querySelector("input");
+  if (field) { field.focus({ preventScroll: true }); field.select() }
 }
-function focus(id) { setTimeout(() => { const el = $(id); el.focus(); el.select?.() }, 60) }
+const isEnter = e => e.key === "Enter" || e.keyCode === 13;
 function say(id, text, error = false) { $(id).textContent = text; $(id).classList.toggle("error", error) }
 function tone(freq) {
   if (!audio || ik.muted) return;                                         // SDK: Ikirmikir's sound switch wins

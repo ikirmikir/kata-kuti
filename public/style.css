@@ -104,6 +104,10 @@ input::placeholder { color: #45433f }
 .board.done .cell { opacity: .25 } .board.done .cell.win { opacity: 1 }
 
 .actions { display: flex; flex-direction: column; gap: 4px; margin-top: 4px }
+.room-tag { align-self: center; display: inline-flex; align-items: baseline; gap: 10px; padding: 8px 14px; border: 0; border-radius: 999px; background: transparent; color: var(--ink); cursor: pointer }
+.room-tag:hover { background: var(--soft) }
+.room-tag:focus-visible { outline: 1px solid var(--ink); outline-offset: 3px }
+#roomTagCode { font: 400 18px/1 var(--serif); letter-spacing: .14em }
 
 @media (prefers-reduced-motion: reduce) {
   .screen.enter, .screen.enter > *, .turn.fresh { animation: none }

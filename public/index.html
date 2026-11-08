@@ -33,7 +33,7 @@
       <button class="back" data-to="home" aria-label="Back">←</button>
       <h2>Your name</h2>
       <div class="inline">
-        <input id="name" maxlength="16" autocomplete="nickname" spellcheck="false" aria-label="Your name">
+        <input id="name" maxlength="16" autocomplete="nickname" spellcheck="false" enterkeyhint="go" aria-label="Your name">
         <button id="create-go" class="btn primary">Create</button>
       </div>
       <p id="createMsg" class="note" role="status">Friends will see this name. Change it if you like.</p>
@@ -43,7 +43,7 @@
       <button class="back" data-to="home" aria-label="Back">←</button>
       <h2>Room code</h2>
       <div class="inline">
-        <input id="code" class="code-input" maxlength="5" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="·····" aria-label="Room code">
+        <input id="code" class="code-input" maxlength="5" autocomplete="off" autocapitalize="characters" spellcheck="false" enterkeyhint="next" placeholder="·····" aria-label="Room code">
         <button id="join-go" class="btn primary icon" aria-label="Next">→</button>
       </div>
       <p id="joinMsg" class="note" role="status">Ask your friend for their 5-letter code.</p>
@@ -53,7 +53,7 @@
       <button class="back" data-to="join" aria-label="Back">←</button>
       <h2>Your name</h2>
       <div class="inline">
-        <input id="name2" maxlength="16" autocomplete="nickname" spellcheck="false" aria-label="Your name">
+        <input id="name2" maxlength="16" autocomplete="nickname" spellcheck="false" enterkeyhint="go" aria-label="Your name">
         <button id="play-go" class="btn primary">Play</button>
       </div>
       <p id="joinNameMsg" class="note" role="status"></p>
@@ -80,6 +80,7 @@
       <p id="notice" class="note" role="status"></p>
       <div class="actions">
         <button id="again" class="btn primary" hidden>Play again</button>
+        <button id="roomTag" class="room-tag" hidden aria-label="Share the room code"><span class="label">Room</span> <span id="roomTagCode"></span></button>
         <button id="quit" class="btn quiet">Leave</button>
       </div>
     </section>
