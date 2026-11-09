@@ -1,4 +1,4 @@
-// Kata-kuti: noughts and crosses with a friend, the Ikirmikir multiplayer example (SDK 1.2).
+// Kata-kuti: noughts and crosses with a friend, the Ikirmikir multiplayer example (SDK 1.2.1).
 // Online: one player makes a room and invites a friend; each move is sent to the other phone (relay mode, so both
 // phones apply the same rules). Look for "SDK:" comments. Without Ikirmikir, it is pass-and-play on one device.
 // Note: the Ikirmikir player doesn't let games submit forms, so buttons and the Enter key do the work instead.
@@ -28,8 +28,8 @@ async function main() {
   // browsers allow sound only after a tap: start the sound engine on the first one, wherever it is
   addEventListener("pointerdown", sfx.wake, { capture: true });
   addEventListener("keydown", sfx.wake, { capture: true });
-  // menu buttons click like the rest of Ikirmikir; the board has its own pencil sound
-  addEventListener("pointerdown", e => { if (e.target.closest?.("button:not(.cell)")) sfx.click() });
+  // SDK: menu buttons make Ikirmikir's own click (it follows Ikirmikir's sound switch); the board has its pencil sound
+  addEventListener("pointerdown", e => { if (e.target.closest?.("button:not(.cell)")) ik.sound.play("click") });
 
   $("toCreate").onclick = () => { $("name").value = savedName() || newName(); show("create") };
   $("toJoin").onclick = () => { $("code").value = ""; show("join") };
@@ -194,8 +194,8 @@ function buildBoard() {
 }
 
 // ---------- sound: made in the browser (Web Audio), no files ----------
-// A pencil scratching paper for each stroke on the board, and Ikirmikir's own click (the same two quick pops the
-// site makes) for the buttons around it. Ikirmikir's sound switch wins (ik.muted).
+// A pencil scratching paper for each stroke on the board. (Buttons use Ikirmikir's click, through the SDK.)
+// Ikirmikir's sound switch wins (ik.muted).
 const sfx = (() => {
   let ac = null, noise = null;
   const ok = () => ac && ac.state === "running" && !ik?.muted;
@@ -224,16 +224,8 @@ const sfx = (() => {
     src.connect(bp).connect(hp).connect(g).connect(ac.destination);
     src.start(at, Math.random() * .5, dur + .05);
   }
-  // one pop: a sine that drops in pitch, fast attack and decay (the same as ikirmikir.com's click)
-  function pop(from, to, dur, vol, delay = 0) {
-    const t = ac.currentTime + delay, o = ac.createOscillator(), g = ac.createGain();
-    o.type = "sine"; o.frequency.setValueAtTime(from, t); o.frequency.exponentialRampToValueAtTime(to, t + dur);
-    g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + .008); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
-    o.connect(g).connect(ac.destination); o.start(t); o.stop(t + dur + .02);
-  }
   return {
     wake,
-    click() { if (ok()) { pop(700, 420, .06, .09); pop(1050, 760, .07, .07, .05) } },
     scratch(mark) {
       if (!ok()) return;
       const t = ac.currentTime;
