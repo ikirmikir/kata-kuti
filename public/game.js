@@ -194,7 +194,7 @@ function render() {
   });
   $("board").dataset.turn = turn;                                         // a faint X or O under the pointer
   $("board").classList.toggle("done", !!over);
-  $("board").classList.toggle("mine", mine);                             // your move: the grid glows
+  $("board").classList.toggle("mine", mine);                             // your move: faint ghosts of your mark
   const strike = $("board").querySelector(".strike"), key = over?.line?.join("") ?? "";
   if (strike.dataset.line !== key) {                                      // three in a row: struck through, past both ends
     strike.dataset.line = key;

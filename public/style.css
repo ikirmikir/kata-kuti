@@ -125,23 +125,22 @@ input::placeholder { color: #b9b9c2 }
 .status .note { min-height: 0; font-size: 13px }
 .status .note:empty { display: none }
 
-.arena { --status: 56px; grid-area: arena; min-height: 0; container-type: size; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px }
+.arena { --status: 56px; grid-area: arena; min-height: 0; container-type: size; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 26px }
 .board { position: relative; isolation: isolate; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr);
-  width: min(100cqw, 100cqh - var(--status) - 12px, 520px); height: min(100cqw, 100cqh - var(--status) - 12px, 520px); flex: none } /* as big as the space allows, always square */
+  width: min(100cqw, 100cqh - var(--status) - 26px, 520px); height: min(100cqw, 100cqh - var(--status) - 26px, 520px); flex: none } /* as big as the space allows, always square */
 /* the grid: four pencil lines, drawn once when the board is made, a little crooked like a real one */
 .board .lines, .board .strike { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; fill: none; stroke-linecap: round }
 .board .lines { z-index: -1; stroke: var(--ink); stroke-width: 1.1 }
 .board .lines path { stroke-dasharray: 100; stroke-dashoffset: 100; animation: draw .35s var(--ease) forwards }
 .board .lines path:nth-child(2) { animation-delay: .12s } .board .lines path:nth-child(3) { animation-delay: .24s } .board .lines path:nth-child(4) { animation-delay: .36s }
-/* your move: the grid's pencil lines glow yellow and breathe softly */
-.board.mine .lines { animation: glow 2.2s ease-in-out infinite }
-@keyframes glow {
-  0%, 100% { filter: drop-shadow(0 0 2px rgb(255 214 10 / 90%)) drop-shadow(0 0 6px rgb(255 214 10 / 55%)) }
-  50% { filter: drop-shadow(0 0 3px rgb(255 214 10 / 100%)) drop-shadow(0 0 12px rgb(255 214 10 / 80%)) }
-}
 .cell { position: relative; border: 0; background: transparent no-repeat content-box center / 100% 100%; cursor: pointer; padding: 18%; transition: opacity .3s }
 .cell[data-mark="X"] { color: var(--x) } .cell[data-mark="O"] { color: var(--o) }
 .cell:disabled { cursor: default }
+/* your move: every empty square shows a faint pencil ghost of your mark, fading gently in and out */
+.board[data-turn="X"] { --ghost: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M18 19Q50 49 82 81M81 18Q49 51 19 82' fill='none' stroke='%232F6BFF' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E") }
+.board[data-turn="O"] { --ghost: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='33' fill='none' stroke='%23b42318' stroke-width='5'/%3E%3C/svg%3E") }
+.board.mine .cell:not(:disabled)::after { content: ""; position: absolute; inset: 18%; background: var(--ghost) center / 100% 100% no-repeat; opacity: 0; animation: ghost 2.4s ease-in-out infinite; pointer-events: none }
+@keyframes ghost { 50% { opacity: .2 } }
 /* hovering an empty square shows a faint pencil version of the mark that would go there */
 @media (hover: hover) {
   .board[data-turn="X"] .cell:not(:disabled):hover { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M18 19Q50 49 82 81M81 18Q49 51 19 82' fill='none' stroke='%232F6BFF' stroke-opacity='.18' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E") }
@@ -172,6 +171,6 @@ input::placeholder { color: #b9b9c2 }
 
 @media (prefers-reduced-motion: reduce) {
   .screen.enter, .screen.enter > *, .turn.fresh, .side.now.you .tag { animation: none }
-  .board.mine .lines { animation: none; filter: drop-shadow(0 0 3px rgb(255 214 10)) drop-shadow(0 0 8px rgb(255 214 10 / 70%)) }
+  .board.mine .cell:not(:disabled)::after { animation: none; opacity: .22 }
   .logo *, .cell svg path, .board .lines path, .board .strike path { animation: none; stroke-dashoffset: 0 }
 }
