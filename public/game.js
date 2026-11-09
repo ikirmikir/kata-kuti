@@ -6,10 +6,23 @@
 const $ = id => document.getElementById(id);
 const LINES = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]];
 const NAME_RULE = /^[\p{L}\p{M}\p{N}_\- ]{1,16}$/u; // what the room server accepts
-const MARKS = { // drawn like a pen: a cross is two strokes one after the other, a nought one stroke (timed with sfx.scratch)
-  X: '<svg viewBox="0 0 100 100"><path pathLength="100" d="M18 18 L82 82"/><path pathLength="100" d="M82 18 L18 82" style="animation-delay:.24s"/></svg>',
-  O: '<svg viewBox="0 0 100 100"><circle pathLength="100" cx="50" cy="50" r="33" style="animation-duration:.42s"/></svg>',
+// Drawn like a pencil: a cross is two strokes one after the other, a nought one stroke that overshoots where it began
+// (timed with sfx.scratch). Every mark wobbles a little differently, as by hand.
+const wob = (n = 4) => (Math.random() * 2 - 1) * n;
+const MARKS = {
+  X: () => `<svg viewBox="0 0 100 100"><path pathLength="100" d="M${18 + wob()} ${18 + wob()}Q${50 + wob(6)} ${50 + wob(6)} ${82 + wob()} ${82 + wob()}"/><path pathLength="100" style="animation-delay:.24s" d="M${82 + wob()} ${18 + wob()}Q${50 + wob(6)} ${50 + wob(6)} ${18 + wob()} ${82 + wob()}"/></svg>`,
+  O: () => {
+    // a smooth, slightly uneven loop that ends a little inside where it began
+    const a0 = -1.9 + wob(.3), ph = Math.random() * 6, sq = 1 + wob(.05), pts = Array.from({ length: 33 }, (_, i) => {
+      const a = a0 + i / 32 * Math.PI * 2.1, r = 33 + Math.sin(a * 2 + ph) * 1.6 - i / 32 * 3;
+      return [50 + Math.cos(a) * r * sq, 50 + Math.sin(a) * r / sq].map(v => v.toFixed(1)).join(" ");
+    });
+    return `<svg viewBox="0 0 100 100"><path pathLength="100" style="animation-duration:.42s" d="M${pts[0]}${pts.slice(1).map(p => "L" + p).join("")}"/></svg>`;
+  },
 };
+// the board's four lines and the line through three in a row, in pencil (0 to 100 across the board)
+const crooked = (x1, y1, x2, y2, bend = 1.6) => `<path pathLength="100" d="M${x1 + wob(.8)} ${y1 + wob(.8)}Q${(x1 + x2) / 2 + wob(bend)} ${(y1 + y2) / 2 + wob(bend)} ${x2 + wob(.8)} ${y2 + wob(.8)}"/>`;
+const centre = i => [(i % 3 + .5) * 100 / 3, (Math.floor(i / 3) + .5) * 100 / 3];
 
 let ik, room = null;          // the SDK, and the online room while in one
 let online = false, me = "X"; // in an online game: which mark is mine
@@ -173,18 +186,28 @@ function render() {
     const t = $("turn"); t.textContent = lastTurnText = text; t.classList.remove("fresh"); void t.offsetWidth; t.classList.add("fresh");
     if (mine) try { navigator.vibrate?.(20) } catch {}
   }
-  [...$("board").children].forEach((b, i) => {
-    if (b.dataset.mark !== board[i]) { b.dataset.mark = board[i]; b.innerHTML = MARKS[board[i]] ?? "" }
+  $("board").querySelectorAll(".cell").forEach((b, i) => {
+    if (b.dataset.mark !== board[i]) { b.dataset.mark = board[i]; b.innerHTML = MARKS[board[i]]?.() ?? "" }
     b.classList.toggle("win", !!over?.line?.includes(i));
     b.disabled = !!over || !!board[i] || (online && turn !== me);
     b.setAttribute("aria-label", `Square ${i + 1}${board[i] ? ", " + (board[i] === "X" ? "cross" : "nought") : ""}`);
   });
   $("board").dataset.turn = turn;                                         // a faint X or O under the pointer
   $("board").classList.toggle("done", !!over);
+  const strike = $("board").querySelector(".strike"), key = over?.line?.join("") ?? "";
+  if (strike.dataset.line !== key) {                                      // three in a row: struck through, past both ends
+    strike.dataset.line = key;
+    if (!key) strike.innerHTML = "";
+    else { const [a, b] = [centre(over.line[0]), centre(over.line[2])], dx = (b[0] - a[0]) * .22, dy = (b[1] - a[1]) * .22;
+      strike.innerHTML = crooked(a[0] - dx, a[1] - dy, b[0] + dx, b[1] + dy, 2.4) }
+  }
   $("board").classList.toggle("mine", mine);
 }
 
 function buildBoard() {
+  $("board").innerHTML = `<svg class="lines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${
+    crooked(100 / 3, 2, 100 / 3, 98) + crooked(200 / 3, 2, 200 / 3, 98) + crooked(2, 100 / 3, 98, 100 / 3) + crooked(2, 200 / 3, 98, 200 / 3)
+  }</svg><svg class="strike" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg>`;
   for (let i = 0; i < 9; i++) {
     const b = document.createElement("button");
     b.className = "cell"; b.dataset.mark = "";

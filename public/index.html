@@ -4,27 +4,30 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, interactive-widget=resizes-content">
   <title>Kata-kuti: noughts and crosses with a friend</title>
+  <link rel="preload" href="fonts/kalam-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/outfit-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <!-- a faint oversized board behind everything, so it is clear what this game is -->
-  <svg class="backdrop" viewBox="0 0 300 300" aria-hidden="true"><path d="M100 0V300M200 0V300M0 100H300M0 200H300"/></svg>
+  <svg class="backdrop" viewBox="0 0 300 300" aria-hidden="true"><path d="M100 0Q104 150 99 300M200 0Q197 150 201 300M0 100Q150 96 300 101M0 200Q150 203 300 199"/></svg>
 
   <main id="app">
     <section id="home" class="screen">
-      <svg class="logo" viewBox="0 0 120 120" role="img" aria-label="A noughts and crosses board">
-        <path class="grid" pathLength="100" d="M44 10V110M76 10V110M10 44H110M10 76H110"/>
-        <path class="x" pathLength="100" d="M17 17L37 37M37 17L17 37"/>
-        <circle class="o" pathLength="100" cx="60" cy="60" r="10"/>
-        <path class="x x2" pathLength="100" d="M83 83L103 103M103 83L83 103"/>
+      <svg class="logo" viewBox="0 0 120 120" role="img" aria-label="A noughts and crosses board drawn in pencil">
+        <path class="grid" pathLength="100" d="M43 9Q45 60 42 111M77 10Q75 58 78 110M9 44Q60 41 111 45M10 77Q62 79 110 75"/>
+        <path class="x" pathLength="100" d="M16 17Q27 26 36 36M36 16Q26 28 17 37"/>
+        <path class="o" pathLength="100" d="M66 53C63 49 54 49 51 55C48 61 52 68 59 68C66 68 70 61 67 55C65 51 61 50 58 51"/>
+        <path class="x x2" pathLength="100" d="M84 84Q94 93 103 103M103 83Q93 94 84 104"/>
       </svg>
       <h1>Kata-kuti</h1>
+      <p class="tagline">Noughts and crosses <span class="hl">with a friend</span>.</p>
       <div id="online" class="stack">
         <button id="toCreate" class="btn primary">Create a room</button>
         <button id="toJoin" class="btn">Join a room</button>
       </div>
       <p id="offlineNote" class="note" hidden>Open this game on ikirmikir.com to play with a friend online.</p>
-      <div class="divider"><span>or</span></div>
+      <div class="divider">or</div>
       <button id="local" class="btn quiet">Play on this device</button>
       <p id="homeMsg" class="note" role="status"></p>
     </section>
