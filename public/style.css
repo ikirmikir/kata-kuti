@@ -122,6 +122,8 @@ input::placeholder { color: #b9b9c2 }
 .status { display: grid; gap: 4px; justify-items: center; align-content: start; min-width: 0; width: 100%; height: var(--status) }
 .turn { font: 700 22px/1.25 var(--hand); min-height: 1.25em; overflow-wrap: anywhere }
 .turn.fresh { animation: enter .4s var(--ease) both }
+/* your move: the line gets a stroke of yellow highlighter, nothing else */
+.turn.mine { background: linear-gradient(transparent 58%, var(--hl) 58%, var(--hl) 92%, transparent 92%); padding: 0 .15em }
 .status .note { min-height: 0; font-size: 13px }
 .status .note:empty { display: none }
 
@@ -133,11 +135,6 @@ input::placeholder { color: #b9b9c2 }
 .board .lines { z-index: -1; stroke: var(--ink); stroke-width: 1.1 }
 .board .lines path { stroke-dasharray: 100; stroke-dashoffset: 100; animation: draw .35s var(--ease) forwards }
 .board .lines path:nth-child(2) { animation-delay: .12s } .board .lines path:nth-child(3) { animation-delay: .24s } .board .lines path:nth-child(4) { animation-delay: .36s }
-/* your turn: a soft yellow wash behind the board, like a highlighter. A blur inside the board's own box: blur never
-   makes the page wider, a bigger layer would */
-.board::before { content: ""; position: absolute; inset: 14%; z-index: -2; border-radius: 50%; background: rgb(255 214 10 / 30%); filter: blur(40px);
-  opacity: 0; transition: opacity .6s; pointer-events: none }
-.board.mine::before { opacity: 1 }
 .cell { position: relative; border: 0; background: transparent no-repeat content-box center / 100% 100%; cursor: pointer; padding: 18%; transition: opacity .3s }
 .cell[data-mark="X"] { color: var(--x) } .cell[data-mark="O"] { color: var(--o) }
 .cell:disabled { cursor: default }

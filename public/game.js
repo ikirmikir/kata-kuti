@@ -182,6 +182,7 @@ function render() {
   const text = over
     ? (over.left ? "Game over" : over.winner ? (nameOf(over.winner) === "You" ? "You win" : `${nameOf(over.winner)} wins`) : "A draw")
     : online ? (mine ? "Your move" : `${nameOf(turn)} is thinking…`) : `${nameOf(turn)} to move`;
+  $("turn").classList.toggle("mine", mine);
   if (text !== lastTurnText) {                                            // a new line rises in quietly
     const t = $("turn"); t.textContent = lastTurnText = text; t.classList.remove("fresh"); void t.offsetWidth; t.classList.add("fresh");
     if (mine) try { navigator.vibrate?.(20) } catch {}
@@ -201,7 +202,6 @@ function render() {
     else { const [a, b] = [centre(over.line[0]), centre(over.line[2])], dx = (b[0] - a[0]) * .22, dy = (b[1] - a[1]) * .22;
       strike.innerHTML = crooked(a[0] - dx, a[1] - dy, b[0] + dx, b[1] + dy, 2.4) }
   }
-  $("board").classList.toggle("mine", mine);
 }
 
 function buildBoard() {
