@@ -28,6 +28,8 @@ async function main() {
   // browsers allow sound only after a tap: start the sound engine on the first one, wherever it is
   addEventListener("pointerdown", sfx.wake, { capture: true });
   addEventListener("keydown", sfx.wake, { capture: true });
+  // menu buttons click like the rest of Ikirmikir; the board has its own pencil sound
+  addEventListener("pointerdown", e => { if (e.target.closest?.("button:not(.cell)")) sfx.click() });
 
   $("toCreate").onclick = () => { $("name").value = savedName() || newName(); show("create") };
   $("toJoin").onclick = () => { $("code").value = ""; show("join") };
@@ -143,8 +145,6 @@ function play(cell, from) {
   const line = LINES.find(l => l.every(i => board[i] === turn));
   if (line || board.every(Boolean)) {
     over = line ? { winner: turn, line } : { winner: null }; if (line) wins[turn]++; gameOff();
-    const won = !online || turn === me;                                   // pass-and-play: someone at this table won
-    setTimeout(() => !line ? sfx.draw() : won ? sfx.win() : sfx.lose(), 520); // as the last stroke finishes
   }
   else turn = turn === "X" ? "O" : "X";
   render();
@@ -162,10 +162,10 @@ function render() {
   for (const m of ["X", "O"]) {
     const side = $(`side${m}`);
     side.querySelector(".who").textContent = nameOf(m);
-    side.querySelector(".wins").textContent = wins[m];
     side.classList.toggle("now", !over && turn === m);
     side.classList.toggle("you", online && m === me);
   }
+  $("score").textContent = `${wins.X} · ${wins.O}`;
   const text = over
     ? (over.left ? "Game over" : over.winner ? (nameOf(over.winner) === "You" ? "You win" : `${nameOf(over.winner)} wins`) : "A draw")
     : online ? (mine ? "Your move" : `${nameOf(turn)} is thinking…`) : `${nameOf(turn)} to move`;
@@ -194,8 +194,8 @@ function buildBoard() {
 }
 
 // ---------- sound: made in the browser (Web Audio), no files ----------
-// A pencil scratching paper for each stroke, a short bright chime for a win, a soft falling pair for a loss, two even
-// notes for a draw. Ikirmikir's sound switch wins (ik.muted).
+// A pencil scratching paper for each stroke on the board, and Ikirmikir's own click (the same two quick pops the
+// site makes) for the buttons around it. Ikirmikir's sound switch wins (ik.muted).
 const sfx = (() => {
   let ac = null, noise = null;
   const ok = () => ac && ac.state === "running" && !ik?.muted;
@@ -224,26 +224,22 @@ const sfx = (() => {
     src.connect(bp).connect(hp).connect(g).connect(ac.destination);
     src.start(at, Math.random() * .5, dur + .05);
   }
-  // one soft mallet note: a sine with a touch of its octave, fast attack, gentle decay
-  function note(freq, at, dur = .5, vol = .14) {
-    for (const [mult, v] of [[1, vol], [2, vol * .18]]) {
-      const o = ac.createOscillator(), g = ac.createGain();
-      o.type = "sine"; o.frequency.value = freq * mult;
-      g.gain.setValueAtTime(0, at); g.gain.linearRampToValueAtTime(v, at + .012); g.gain.exponentialRampToValueAtTime(.0001, at + dur);
-      o.connect(g).connect(ac.destination); o.start(at); o.stop(at + dur + .02);
-    }
+  // one pop: a sine that drops in pitch, fast attack and decay (the same as ikirmikir.com's click)
+  function pop(from, to, dur, vol, delay = 0) {
+    const t = ac.currentTime + delay, o = ac.createOscillator(), g = ac.createGain();
+    o.type = "sine"; o.frequency.setValueAtTime(from, t); o.frequency.exponentialRampToValueAtTime(to, t + dur);
+    g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + .008); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    o.connect(g).connect(ac.destination); o.start(t); o.stop(t + dur + .02);
   }
   return {
     wake,
+    click() { if (ok()) { pop(700, 420, .06, .09); pop(1050, 760, .07, .07, .05) } },
     scratch(mark) {
       if (!ok()) return;
       const t = ac.currentTime;
       if (mark === "X") { stroke(t, .2, 2600); stroke(t + .24, .2, 2900) } // matches the two drawn strokes
       else stroke(t, .42, 2300);
     },
-    win() { if (!ok()) return; const t = ac.currentTime; [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => note(f, t + i * .09, .7)) }, // C E G C, rising
-    lose() { if (!ok()) return; const t = ac.currentTime; note(392, t, .6, .12); note(311.13, t + .16, .9, .12) },                       // G down to E flat
-    draw() { if (!ok()) return; const t = ac.currentTime; note(440, t, .45, .11); note(440, t + .18, .6, .11) },                         // A, A
   };
 })();
 
