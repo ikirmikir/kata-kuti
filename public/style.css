@@ -122,8 +122,6 @@ input::placeholder { color: #b9b9c2 }
 .status { display: grid; gap: 4px; justify-items: center; align-content: start; min-width: 0; width: 100%; height: var(--status) }
 .turn { font: 700 22px/1.25 var(--hand); min-height: 1.25em; overflow-wrap: anywhere }
 .turn.fresh { animation: enter .4s var(--ease) both }
-/* your move: the line gets a stroke of yellow highlighter, nothing else */
-.turn.mine { background: linear-gradient(transparent 58%, var(--hl) 58%, var(--hl) 92%, transparent 92%); padding: 0 .15em }
 .status .note { min-height: 0; font-size: 13px }
 .status .note:empty { display: none }
 
@@ -135,6 +133,12 @@ input::placeholder { color: #b9b9c2 }
 .board .lines { z-index: -1; stroke: var(--ink); stroke-width: 1.1 }
 .board .lines path { stroke-dasharray: 100; stroke-dashoffset: 100; animation: draw .35s var(--ease) forwards }
 .board .lines path:nth-child(2) { animation-delay: .12s } .board .lines path:nth-child(3) { animation-delay: .24s } .board .lines path:nth-child(4) { animation-delay: .36s }
+/* your move: the grid's pencil lines glow yellow and breathe softly */
+.board.mine .lines { animation: glow 2.2s ease-in-out infinite }
+@keyframes glow {
+  0%, 100% { filter: drop-shadow(0 0 2px rgb(255 214 10 / 90%)) drop-shadow(0 0 6px rgb(255 214 10 / 55%)) }
+  50% { filter: drop-shadow(0 0 3px rgb(255 214 10 / 100%)) drop-shadow(0 0 12px rgb(255 214 10 / 80%)) }
+}
 .cell { position: relative; border: 0; background: transparent no-repeat content-box center / 100% 100%; cursor: pointer; padding: 18%; transition: opacity .3s }
 .cell[data-mark="X"] { color: var(--x) } .cell[data-mark="O"] { color: var(--o) }
 .cell:disabled { cursor: default }
@@ -168,5 +172,6 @@ input::placeholder { color: #b9b9c2 }
 
 @media (prefers-reduced-motion: reduce) {
   .screen.enter, .screen.enter > *, .turn.fresh, .side.now.you .tag { animation: none }
+  .board.mine .lines { animation: none; filter: drop-shadow(0 0 3px rgb(255 214 10)) drop-shadow(0 0 8px rgb(255 214 10 / 70%)) }
   .logo *, .cell svg path, .board .lines path, .board .strike path { animation: none; stroke-dashoffset: 0 }
 }

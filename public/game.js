@@ -182,7 +182,6 @@ function render() {
   const text = over
     ? (over.left ? "Game over" : over.winner ? (nameOf(over.winner) === "You" ? "You win" : `${nameOf(over.winner)} wins`) : "A draw")
     : online ? (mine ? "Your move" : `${nameOf(turn)} is thinking…`) : `${nameOf(turn)} to move`;
-  $("turn").classList.toggle("mine", mine);
   if (text !== lastTurnText) {                                            // a new line rises in quietly
     const t = $("turn"); t.textContent = lastTurnText = text; t.classList.remove("fresh"); void t.offsetWidth; t.classList.add("fresh");
     if (mine) try { navigator.vibrate?.(20) } catch {}
@@ -195,6 +194,7 @@ function render() {
   });
   $("board").dataset.turn = turn;                                         // a faint X or O under the pointer
   $("board").classList.toggle("done", !!over);
+  $("board").classList.toggle("mine", mine);                             // your move: the grid glows
   const strike = $("board").querySelector(".strike"), key = over?.line?.join("") ?? "";
   if (strike.dataset.line !== key) {                                      // three in a row: struck through, past both ends
     strike.dataset.line = key;
