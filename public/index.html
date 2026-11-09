@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, interactive-widget=resizes-content">
   <title>Kata-kuti: noughts and crosses with a friend</title>
   <link rel="stylesheet" href="style.css">
 </head>
@@ -69,8 +69,8 @@
       </div>
     </section>
 
-    <!-- the game fills the whole frame and never scrolls: players and the turn line along the top, the board in the
-         middle, a small bar along the bottom with the room code and Leave (the same on every screen size) -->
+    <!-- the game fills the whole frame and never scrolls: the players with their wins and the turn line above the
+         board, Play again below it. Leaving is the Ikirmikir back button. -->
     <section id="play" class="screen game" hidden>
       <header class="topline">
         <ul class="players" aria-label="Players and wins">
@@ -84,10 +84,6 @@
       </header>
       <div class="arena"><div id="board" class="board" role="grid" aria-label="Board"></div></div>
       <div class="again-row"><button id="again" class="btn primary" hidden>Play again</button></div>
-      <footer class="bottombar">
-        <button id="roomTag" class="room-tag" hidden aria-label="Share the room code"><span class="label">Room</span> <span id="roomTagCode"></span></button>
-        <button id="quit" class="btn quiet">Leave</button>
-      </footer>
     </section>
   </main>
   <!-- The Ikirmikir SDK file, copied next to the game (gives window.Ikirmikir). -->

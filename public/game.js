@@ -6,15 +6,14 @@
 const $ = id => document.getElementById(id);
 const LINES = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]];
 const NAME_RULE = /^[\p{L}\p{M}\p{N}_\- ]{1,16}$/u; // what the room server accepts
-const MARKS = {
-  X: '<svg viewBox="0 0 100 100"><path pathLength="100" d="M18 18 L82 82"/><path pathLength="100" d="M82 18 L18 82" style="animation-delay:.12s"/></svg>',
-  O: '<svg viewBox="0 0 100 100"><circle pathLength="100" cx="50" cy="50" r="33"/></svg>',
+const MARKS = { // drawn like a pen: a cross is two strokes one after the other, a nought one stroke (timed with sfx.scratch)
+  X: '<svg viewBox="0 0 100 100"><path pathLength="100" d="M18 18 L82 82"/><path pathLength="100" d="M82 18 L18 82" style="animation-delay:.24s"/></svg>',
+  O: '<svg viewBox="0 0 100 100"><circle pathLength="100" cx="50" cy="50" r="33" style="animation-duration:.42s"/></svg>',
 };
 
 let ik, room = null;          // the SDK, and the online room while in one
 let online = false, me = "X"; // in an online game: which mark is mine
 let board = Array(9).fill(""), round = 0, turn = "X", over = false, wins = { X: 0, O: 0 };
-let audio;
 
 main();
 
@@ -25,6 +24,10 @@ async function main() {
   $("online").hidden = !canPlayOnline;
   $("offlineNote").hidden = canPlayOnline;
   ik.game.loadingDone();                                                  // SDK: Ikirmikir hides its loader
+
+  // browsers allow sound only after a tap: start the sound engine on the first one, wherever it is
+  addEventListener("pointerdown", sfx.wake, { capture: true });
+  addEventListener("keydown", sfx.wake, { capture: true });
 
   $("toCreate").onclick = () => { $("name").value = savedName() || newName(); show("create") };
   $("toJoin").onclick = () => { $("code").value = ""; show("join") };
@@ -39,8 +42,8 @@ async function main() {
   $("code").oninput = () => { $("code").value = $("code").value.toUpperCase().replace(/[^A-Z0-9]/g, ""); say("joinMsg", "Ask your friend for their 5-letter code.") };
   $("name").oninput = () => say("createMsg", "Friends will see this name. Change it if you like.");
   $("local").onclick = () => { online = false; wins = { X: 0, O: 0 }; startRound(0) };
-  $("invite").onclick = $("roomTag").onclick = () => room?.invite();    // SDK: share sheet with the invite link
-  $("cancel").onclick = $("quit").onclick = leaveGame;
+  $("invite").onclick = () => room?.invite();                             // SDK: share sheet with the invite link
+  $("cancel").onclick = leaveGame;
   $("again").onclick = () => { if (online) room.send({ t: "again", round: round + 1 }); startRound(round + 1) };
 
   // SDK: someone opened an invite link to a room, so join it straight away
@@ -85,6 +88,9 @@ async function join() {
   if (!joined) { show("join"); say("joinMsg", $("joinNameMsg").textContent, true) } // a room that's gone or full: back to the code
 }
 
+// Who plays which mark: the player already in the room keeps theirs and tells whoever comes in to take the other
+// one. (Deciding by the order of the player list broke when the room's maker left and came back: both picked the
+// same mark and nobody could move.)
 async function enter(request, msg, waitText) {
   say(msg, waitText);
   for (const b of document.querySelectorAll("#create-go, #play-go")) b.disabled = true;
@@ -95,22 +101,24 @@ async function enter(request, msg, waitText) {
     full: "That room already has two players.",
     unavailable: "Couldn't reach the online rooms. Late in the day they may rest until 6 AM Bangladesh time. Play on this device instead.",
   }[r.error] ?? "Something went wrong. Try again.", true);
-  say(msg, "");
-  room = r.room; online = true; wins = { X: 0, O: 0 };
-  $("roomTagCode").textContent = room.code;
-  me = room.players[0].id === room.you.id ? "X" : "O";                   // whoever made the room plays X
-  room.on("join", () => startRound(0));
+  room = r.room; online = true; wins = { X: 0, O: 0 }; me = "X"; lastFriend = "Friend";
+  room.on("join", () => {                                                 // a friend came in: they take the other mark
+    wins = { X: 0, O: 0 };
+    room.send({ t: "start", you: me === "X" ? "O" : "X" });
+    startRound(0);
+  });
   room.on("leave", p => { gameOff(); over = over || { left: true }; render(); say("notice", `${p.name} left the game.`); $("again").hidden = true }); // the round stops
   room.on("away", p => say("notice", `${p.name}'s connection dropped. Waiting for them…`));
   room.on("back", () => { say("notice", ""); room.send({ t: "state", board, round, turn, over, wins }) }); // catch them up
   room.on("status", s => say("notice", s === "reconnecting" ? "Reconnecting…" : s === "closed" ? "Connection lost." : ""));
   room.on("message", (m, from) => {
     if (m?.t === "move") play(m.cell, from);
+    else if (m?.t === "start" && (m.you === "X" || m.you === "O")) { me = m.you; say(msg, ""); startRound(0) }
     else if (m?.t === "again" && m.round === round + 1) startRound(m.round);
     else if (m?.t === "state" && Array.isArray(m.board)) { board = m.board; round = m.round; turn = m.turn; over = m.over; wins = m.wins; render() }
   });
-  if (room.players.length === 2) startRound(0);
-  else { $("roomCode").textContent = room.code; show("waiting") }
+  if (room.players.length === 1) { say(msg, ""); $("roomCode").textContent = room.code; show("waiting") } // made the room: wait
+  // else: joined someone's room; their "start" message (sent the moment we arrive) starts the game
   return true;
 }
 
@@ -131,17 +139,22 @@ function tap(cell) {
 function play(cell, from) {
   if (over || board[cell] || !Number.isInteger(cell) || cell < 0 || cell > 8) return;
   if (from && turn === me) return;                                        // not their turn: ignore
-  board[cell] = turn; tone(turn === "X" ? 520 : 390);
+  board[cell] = turn; sfx.scratch(turn);
   const line = LINES.find(l => l.every(i => board[i] === turn));
-  if (line || board.every(Boolean)) { over = line ? { winner: turn, line } : { winner: null }; if (line) wins[turn]++; gameOff() }
+  if (line || board.every(Boolean)) {
+    over = line ? { winner: turn, line } : { winner: null }; if (line) wins[turn]++; gameOff();
+    const won = !online || turn === me;                                   // pass-and-play: someone at this table won
+    setTimeout(() => !line ? sfx.draw() : won ? sfx.win() : sfx.lose(), 520); // as the last stroke finishes
+  }
   else turn = turn === "X" ? "O" : "X";
   render();
 }
 
 function gameOff() { ik.game.gameplayStop(); $("again").hidden = false }  // SDK: play stopped
 
+let lastFriend = "Friend";                                                // their name stays on screen after they leave
 const opponent = () => room?.players.find(p => p.id !== room.you.id);
-const nameOf = mark => !online ? (mark === "X" ? "Cross" : "Nought") : mark === me ? "You" : opponent()?.name ?? "Friend";
+const nameOf = mark => !online ? (mark === "X" ? "Cross" : "Nought") : mark === me ? "You" : (lastFriend = opponent()?.name ?? lastFriend);
 
 let lastTurnText = "";
 function render() {
@@ -166,8 +179,8 @@ function render() {
     b.disabled = !!over || !!board[i] || (online && turn !== me);
     b.setAttribute("aria-label", `Square ${i + 1}${board[i] ? ", " + (board[i] === "X" ? "cross" : "nought") : ""}`);
   });
+  $("board").dataset.turn = turn;                                         // a faint X or O under the pointer
   $("board").classList.toggle("done", !!over);
-  $("roomTag").hidden = !online || !room;                                 // the code stays in view, in case someone drops out
   $("board").classList.toggle("mine", mine);
 }
 
@@ -175,10 +188,64 @@ function buildBoard() {
   for (let i = 0; i < 9; i++) {
     const b = document.createElement("button");
     b.className = "cell"; b.dataset.mark = "";
-    b.onclick = () => { if (!audio) try { audio = new AudioContext() } catch {} ; tap(i) };
+    b.onclick = () => tap(i);
     $("board").append(b);
   }
 }
+
+// ---------- sound: made in the browser (Web Audio), no files ----------
+// A pencil scratching paper for each stroke, a short bright chime for a win, a soft falling pair for a loss, two even
+// notes for a draw. Ikirmikir's sound switch wins (ik.muted).
+const sfx = (() => {
+  let ac = null, noise = null;
+  const ok = () => ac && ac.state === "running" && !ik?.muted;
+  function wake() {
+    try {
+      if (!ac) {
+        ac = new AudioContext();
+        // one second of grainy noise (mostly soft, with rough specks, like graphite on paper), reused by every stroke
+        noise = ac.createBuffer(1, ac.sampleRate, ac.sampleRate);
+        const d = noise.getChannelData(0);
+        for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (Math.random() < .12 ? 1 : .35);
+      }
+      if (ac.state === "suspended") ac.resume();
+    } catch {}
+  }
+  // one pencil stroke: band-passed noise, a quick attack, a slight wobble as the pencil drags, a soft lift-off
+  function stroke(at, dur, pitch) {
+    const src = ac.createBufferSource(), bp = ac.createBiquadFilter(), hp = ac.createBiquadFilter(), g = ac.createGain();
+    src.buffer = noise; src.playbackRate.value = .9 + Math.random() * .2;
+    bp.type = "bandpass"; bp.Q.value = 1.1;
+    bp.frequency.setValueAtTime(pitch, at); bp.frequency.linearRampToValueAtTime(pitch * 1.25, at + dur);
+    hp.type = "highpass"; hp.frequency.value = 900;
+    g.gain.setValueAtTime(0, at); g.gain.linearRampToValueAtTime(.32, at + .025);
+    for (let t = at + .05; t < at + dur - .04; t += .035) g.gain.linearRampToValueAtTime(.18 + Math.random() * .16, t);
+    g.gain.linearRampToValueAtTime(0, at + dur);
+    src.connect(bp).connect(hp).connect(g).connect(ac.destination);
+    src.start(at, Math.random() * .5, dur + .05);
+  }
+  // one soft mallet note: a sine with a touch of its octave, fast attack, gentle decay
+  function note(freq, at, dur = .5, vol = .14) {
+    for (const [mult, v] of [[1, vol], [2, vol * .18]]) {
+      const o = ac.createOscillator(), g = ac.createGain();
+      o.type = "sine"; o.frequency.value = freq * mult;
+      g.gain.setValueAtTime(0, at); g.gain.linearRampToValueAtTime(v, at + .012); g.gain.exponentialRampToValueAtTime(.0001, at + dur);
+      o.connect(g).connect(ac.destination); o.start(at); o.stop(at + dur + .02);
+    }
+  }
+  return {
+    wake,
+    scratch(mark) {
+      if (!ok()) return;
+      const t = ac.currentTime;
+      if (mark === "X") { stroke(t, .2, 2600); stroke(t + .24, .2, 2900) } // matches the two drawn strokes
+      else stroke(t, .42, 2300);
+    },
+    win() { if (!ok()) return; const t = ac.currentTime; [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => note(f, t + i * .09, .7)) }, // C E G C, rising
+    lose() { if (!ok()) return; const t = ac.currentTime; note(392, t, .6, .12); note(311.13, t + .16, .9, .12) },                       // G down to E flat
+    draw() { if (!ok()) return; const t = ac.currentTime; note(440, t, .45, .11); note(440, t + .18, .6, .11) },                         // A, A
+  };
+})();
 
 // ---------- small helpers ----------
 function show(id) {
@@ -194,10 +261,3 @@ function show(id) {
 }
 const isEnter = e => e.key === "Enter" || e.keyCode === 13;
 function say(id, text, error = false) { $(id).textContent = text; $(id).classList.toggle("error", error) }
-function tone(freq) {
-  if (!audio || ik.muted) return;                                         // SDK: Ikirmikir's sound switch wins
-  const o = audio.createOscillator(), g = audio.createGain();
-  o.type = "sine"; o.frequency.value = freq; g.gain.setValueAtTime(0.06, audio.currentTime);
-  g.gain.exponentialRampToValueAtTime(0.0001, audio.currentTime + 0.18);
-  o.connect(g).connect(audio.destination); o.start(); o.stop(audio.currentTime + 0.18);
-}
