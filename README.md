@@ -2,8 +2,9 @@
 
 The [Ikirmikir](https://ikirmikir.com) multiplayer example. Two players, each on their own phone: one makes a room and sends the invite link (or reads out the room code), the other joins, and every move goes to the other phone. Plain HTML, CSS and JavaScript, no build step. Copy anything you like.
 
-- `public/ikirmikir.js` is the [Ikirmikir game SDK](https://ikirmikir.com/developers/sdk/) 1.2.1, copied next to the game.
-- `public/game.js` uses it. Search for `SDK:` to see each call: `ik.multiplayer.create` and `join` (with the name the player typed), `invite`, `room.send`, `ik.sound.play("click")` for the menu buttons, the room's `join`, `leave`, `away`, `back`, `message` and `status` events, and catching a returning player up after a dropped connection.
+- `public/ikirmikir.js` is the [Ikirmikir game SDK](https://ikirmikir.com/developers/sdk/) 1.3.1, copied next to the game.
+- `public/game.js` uses it. Search for `SDK:` to see each call: `ik.multiplayer.create` and `join` (with the name the player typed), `invite`, `room.send`, `ik.sound.play("click")` for the menu buttons, the room's `join`, `leave`, `away`, `back`, `message` and `status` events, and catching a returning player up after a dropped connection. With SDK 1.3: the signed-in player's name fills the name box (`ik.player.get`), online wins are kept in `ik.data`, and the tenth earns the `champ` badge (`ik.badges.award`).
+- Play time is measured for the whole match, not each round (`gameplayStart` at the first round; `gameplayStop` on leaving, when the friend leaves, when the game is hidden, or a minute after a round without playing again). One round is often shorter than the 20 seconds Ikirmikir needs to count it.
 - Who plays which mark: the player already in the room keeps theirs and sends the newcomer the other one (`start` message). Don't decide by the order of `room.players`: when the room's maker leaves and comes back, both players would pick the same mark.
 - The pencil scratch for each stroke is made with Web Audio, so there are no sound files, and they stay quiet when Ikirmikir's sound switch is off (`ik.muted`).
 - Online play works only inside Ikirmikir (`ik.has("multiplayer")`); anywhere else the game is pass-and-play on one device.

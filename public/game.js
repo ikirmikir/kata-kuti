@@ -1,4 +1,4 @@
-// Kata-kuti: noughts and crosses with a friend, the Ikirmikir multiplayer example (SDK 1.2.1).
+// Kata-kuti: noughts and crosses with a friend, the Ikirmikir multiplayer example (SDK 1.3.1).
 // Online: one player makes a room and invites a friend; each move is sent to the other phone (relay mode, so both
 // phones apply the same rules). Look for "SDK:" comments. Without Ikirmikir, it is pass-and-play on one device.
 // Note: the Ikirmikir player doesn't let games submit forms, so buttons and the Enter key do the work instead.
@@ -25,6 +25,7 @@ const crooked = (x1, y1, x2, y2, bend = 1.6) => `<path pathLength="100" d="M${x1
 const centre = i => [(i % 3 + .5) * 100 / 3, (Math.floor(i / 3) + .5) * 100 / 3];
 
 let ik, room = null;          // the SDK, and the online room while in one
+let myName = "";              // the signed-in player's name on Ikirmikir, if any
 let online = false, me = "X"; // in an online game: which mark is mine
 let board = Array(9).fill(""), round = 0, turn = "X", over = false, wins = { X: 0, O: 0 };
 
@@ -37,6 +38,9 @@ async function main() {
   $("online").hidden = !canPlayOnline;
   $("offlineNote").hidden = canPlayOnline;
   ik.game.loadingDone();                                                  // SDK: Ikirmikir hides its loader
+  try { myName = (await ik.player.get())?.name ?? "" } catch {}           // SDK 1.3: a signed-in player's name, for rooms
+  ik.on("pause", () => { if (playingNow()) clock.stop() });               // SDK: the player left the game
+  ik.on("resume", () => { if (playingNow()) clock.start() });
 
   // browsers allow sound only after a tap: start the sound engine on the first one, wherever it is
   addEventListener("pointerdown", sfx.wake, { capture: true });
@@ -44,7 +48,7 @@ async function main() {
   // SDK: menu buttons make Ikirmikir's own click (it follows Ikirmikir's sound switch); the board has its pencil sound
   addEventListener("pointerdown", e => { if (e.target.closest?.("button:not(.cell)")) ik.sound.play("click") });
 
-  $("toCreate").onclick = () => { $("name").value = savedName() || newName(); show("create") };
+  $("toCreate").onclick = () => { $("name").value = myName || savedName() || newName(); show("create") };
   $("toJoin").onclick = () => { $("code").value = ""; show("join") };
   for (const b of document.querySelectorAll(".back")) b.onclick = () => show(b.dataset.to);
   $("create-go").onclick = create;
@@ -66,7 +70,20 @@ async function main() {
   else show("home");
 }
 
-function leaveGame() { room?.leave(); room = null; ik.game.gameplayStop(); show("home") }
+function leaveGame() { room?.leave(); room = null; clock.stop(); show("home") }
+
+// Play time for a whole match, not each round (Maruf, 2026-11-12): one round of noughts and crosses is often shorter
+// than the 20 seconds Ikirmikir needs to count a round, so the clock runs from the first round of a match until you
+// leave, your friend leaves, the game is hidden, or a minute passes after a round without playing again.
+const clock = (() => {
+  let idle = 0;
+  return {
+    start() { clearTimeout(idle); ik.game.gameplayStart() },              // SDK: someone is playing
+    between() { clearTimeout(idle); idle = setTimeout(() => ik.game.gameplayStop(), 60_000) },
+    stop() { clearTimeout(idle); ik.game.gameplayStop() },                // SDK: play stopped
+  };
+})();
+const playingNow = () => document.body.classList.contains("playing") && !over;
 
 // ---------- names ----------
 function savedName() { try { return localStorage.getItem("kata-kuti-name") ?? "" } catch { return "" } }
@@ -91,7 +108,7 @@ function toJoinName() {
   const code = $("code").value.trim().toUpperCase();
   if (code.length !== 5) return say("joinMsg", "Room codes have 5 letters and numbers.", true);
   $("code").value = code;
-  $("name2").value = savedName() || newName();
+  $("name2").value = myName || savedName() || newName();
   say("joinNameMsg", `Joining room ${code}. Your friend will see this name.`);
   show("joinName");
 }
@@ -122,7 +139,7 @@ async function enter(request, msg, waitText) {
     room.send({ t: "start", you: me === "X" ? "O" : "X" });
     startRound(0);
   });
-  room.on("leave", p => { gameOff(); over = over || { left: true }; render(); say("notice", `${p.name} left the game.`); $("again").hidden = true }); // the round stops
+  room.on("leave", p => { gameOff(); clock.stop(); over = over || { left: true }; render(); say("notice", `${p.name} left the game.`); $("again").hidden = true }); // the round stops
   room.on("away", p => say("notice", `${p.name}'s connection dropped. Waiting for them…`));
   room.on("back", () => { say("notice", ""); room.send({ t: "state", board, round, turn, over, wins }) }); // catch them up
   room.on("status", s => say("notice", s === "reconnecting" ? "Reconnecting…" : s === "closed" ? "Connection lost." : ""));
@@ -142,7 +159,7 @@ function startRound(r) {
   round = r; board = Array(9).fill(""); turn = r % 2 ? "O" : "X"; over = false;
   say("notice", ""); $("again").hidden = true;
   show("play"); render();
-  ik.game.gameplayStart();                                                // SDK: someone is playing
+  clock.start();
 }
 
 function tap(cell) {
@@ -158,12 +175,26 @@ function play(cell, from) {
   const line = LINES.find(l => l.every(i => board[i] === turn));
   if (line || board.every(Boolean)) {
     over = line ? { winner: turn, line } : { winner: null }; if (line) wins[turn]++; gameOff();
+    if (line && online && turn === me) countWin();
   }
   else turn = turn === "X" ? "O" : "X";
   render();
 }
 
-function gameOff() { ik.game.gameplayStop(); $("again").hidden = false }  // SDK: play stopped
+function gameOff() { clock.between(); $("again").hidden = false }
+
+// Online wins, kept with the player's saves on Ikirmikir; the tenth earns the Kata-kuti champ badge. (Wins on one
+// device don't count: you would be playing yourself.)
+async function countWin() {
+  try {
+    const n = ((await ik.data.get("wins")) ?? 0) + 1;                     // SDK 1.3: saves
+    await ik.data.set("wins", n);
+    if (n >= 10) {
+      const r = await ik.badges.award("champ");                           // SDK 1.3: a badge listed for Kata-kuti
+      if (r.new) say("notice", "Badge earned: Kata-kuti champ, for 10 online wins!");
+    }
+  } catch {}
+}
 
 let lastFriend = "Friend";                                                // their name stays on screen after they leave
 const opponent = () => room?.players.find(p => p.id !== room.you.id);
