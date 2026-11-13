@@ -3,17 +3,17 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, interactive-widget=resizes-content">
-  <title>Kata-kuti: noughts and crosses with a friend</title>
+  <title>Kata-kuti · Ikirmikir</title>
   <link rel="preload" href="fonts/kalam-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="fonts/outfit-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css"><link rel="stylesheet" href="shell.css">
 </head>
 <body>
   <!-- a faint oversized board behind everything, so it is clear what this game is -->
   <svg class="backdrop" viewBox="0 0 300 300" aria-hidden="true"><path d="M100 0Q104 150 99 300M200 0Q197 150 201 300M0 100Q150 96 300 101M0 200Q150 203 300 199"/></svg>
 
   <main id="app">
-    <section id="home" class="screen">
+    <section id="home" class="screen menu">
       <svg class="logo" viewBox="0 0 120 120" role="img" aria-label="A noughts and crosses board drawn in pencil">
         <path class="grid" pathLength="100" d="M43 9Q45 60 42 111M77 10Q75 58 78 110M9 44Q60 41 111 45M10 77Q62 79 110 75"/>
         <path class="x" pathLength="100" d="M16 17Q27 26 36 36M36 16Q26 28 17 37"/>
@@ -22,59 +22,42 @@
       </svg>
       <h1>Kata-kuti</h1>
       <p class="tagline">Noughts and crosses <span class="hl">with a friend</span>.</p>
-      <div id="online" class="stack">
-        <button id="toCreate" class="btn primary">Create a room</button>
-        <button id="toJoin" class="btn">Join a room</button>
-      </div>
-      <p id="offlineNote" class="note" hidden>Open this game on ikirmikir.com to play with a friend online.</p>
-      <div class="divider">or</div>
-      <button id="local" class="btn quiet">Play on this device</button>
-      <p id="homeMsg" class="note" role="status"></p>
+      <div class="menu-actions"><div id="online"><button id="toCreate" class="choice"><span class="choice-symbol" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="9" cy="7" r="3"/><path d="M3 20v-2a6 6 0 0 1 12 0v2M16 4a3 3 0 0 1 0 6M18 13a5 5 0 0 1 3 5v2"/></svg></span><span><strong>Play with friends</strong><small>Online rooms · 2 players</small></span><span aria-hidden="true">→</span></button></div><button id="local" class="choice"><span class="choice-symbol" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="7" y="3" width="10" height="18" rx="2"/><path d="M11 17h2M3 7l-2 3 2 3M1 10h4M21 11l2 3-2 3M19 14h4"/></svg></span><span><strong>Pass & play</strong><small>2 friends on the same device</small></span><span aria-hidden="true">→</span></button></div><p id="offlineNote" class="note" hidden>Open this game inside Ikirmikir to invite a friend on another device.</p>      <p id="homeMsg" class="note" role="status"></p>
     </section>
 
-    <section id="create" class="screen" hidden>
+    <section id="create" class="screen menu" hidden>
       <button class="back" data-to="home" aria-label="Back">←</button>
-      <h2>Your name</h2>
-      <div class="inline">
-        <input id="name" maxlength="16" autocomplete="nickname" spellcheck="false" enterkeyhint="go" aria-label="Your name">
-        <button id="create-go" class="btn primary">Create</button>
+      <div class="eyebrow">Better with company</div><h2>Play with <span class="hl">friends.</span></h2>
+      <div class="stack">
+        <input id="name" placeholder="What should we call you?" maxlength="16" autocomplete="nickname" spellcheck="false" enterkeyhint="go" aria-label="Your name">
+        <button id="create-go" class="btn primary">Create a friend room</button>
       </div>
-      <p id="createMsg" class="note" role="status">Friends will see this name. Change it if you like.</p>
+      <p id="createMsg" class="note" role="status"></p>
     </section>
 
-    <section id="join" class="screen" hidden>
+    <section id="joinName" class="screen menu" hidden>
       <button class="back" data-to="home" aria-label="Back">←</button>
-      <h2>Room code</h2>
-      <div class="inline">
-        <input id="code" class="code-input" maxlength="5" autocomplete="off" autocapitalize="characters" spellcheck="false" enterkeyhint="next" placeholder="·····" aria-label="Room code">
-        <button id="join-go" class="btn primary icon" aria-label="Next">→</button>
-      </div>
-      <p id="joinMsg" class="note" role="status">Ask your friend for their 5-letter code.</p>
-    </section>
-
-    <section id="joinName" class="screen" hidden>
-      <button class="back" data-to="join" aria-label="Back">←</button>
-      <h2>Your name</h2>
-      <div class="inline">
-        <input id="name2" maxlength="16" autocomplete="nickname" spellcheck="false" enterkeyhint="go" aria-label="Your name">
-        <button id="play-go" class="btn primary">Play</button>
+      <div class="eyebrow">Better with company</div><h2>Play with <span class="hl">friends.</span></h2>
+      <div class="stack">
+        <input id="name2" placeholder="What should we call you?" maxlength="16" autocomplete="nickname" spellcheck="false" enterkeyhint="go" aria-label="Your name">
+        <button id="play-go" class="btn primary">Join friend’s room</button>
       </div>
       <p id="joinNameMsg" class="note" role="status"></p>
     </section>
 
-    <section id="waiting" class="screen" hidden>
-      <p class="label">Room code</p>
+    <section id="waiting" class="screen menu" hidden>
+      <h2>Save a seat<br>for your <span class="hl">friend.</span></h2><p class="note">Send an invite, or share this room code.</p>
       <p id="roomCode" class="code"></p>
-      <p class="note"><span class="pulse" aria-hidden="true"></span>Waiting for a friend to join</p>
+      <p class="note"><span class="waiting-seats" aria-hidden="true"><i></i><i></i></span>Waiting for a friend to join</p>
       <div class="pair">
-        <button id="invite" class="btn primary">Share</button>
-        <button id="cancel" class="btn">Cancel</button>
+        <button id="invite" class="btn primary">Share invite ↗</button>
+        <button id="cancel" class="btn quiet">Back to menu</button>
       </div>
     </section>
 
     <!-- the game fills the whole frame and never scrolls: names left and right with the score between them, the
-         board with the turn line right under it, then Play again. Leaving is the Ikirmikir back button. -->
-    <section id="play" class="screen game" hidden>
+         board with the turn line right under it, then Play again. The quiet Lobby control confirms leaving a live round. -->
+    <section id="play" class="screen game" hidden><header class="game-toolbar"><button id="menu" class="text"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 5L3 12L10 19M3 12H21"/></svg><span>Lobby</span></button><div class="toolbar-right"><button id="auto-rotate" class="text" aria-pressed="false" aria-label="Automatically rotate for the next player" hidden>↻ Auto: off</button><button id="invite-play" class="text" hidden>Invite ↗</button><button id="resign" class="text"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 21V3M6 4Q11 1 15 4Q18 6 21 3V13Q17 16 13 13Q10 11 6 14"/></svg><span>Resign</span></button></div></header>
       <header class="scoreboard">
         <div class="side" id="sideX"><span class="tag"><span class="mark-sm" aria-hidden="true">×</span><span class="who"></span></span></div>
         <div class="score" id="score" aria-label="Wins">0 · 0</div>
@@ -90,6 +73,7 @@
       <div class="again-row"><button id="again" class="btn primary" hidden>Play again</button></div>
     </section>
   </main>
+<dialog id="confirm-dialog" aria-labelledby="confirm-title"><h2 id="confirm-title">Return to the lobby?</h2><p id="confirm-copy" class="note"></p><div class="confirm-actions"><button id="keep" class="btn">Keep playing</button><button id="confirm" class="btn primary">Leave round</button></div></dialog>
   <!-- The Ikirmikir SDK file, copied next to the game (gives window.Ikirmikir). -->
   <script src="ikirmikir.js"></script>
   <script src="game.js"></script>

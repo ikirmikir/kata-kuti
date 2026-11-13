@@ -25,7 +25,7 @@ const crooked = (x1, y1, x2, y2, bend = 1.6) => `<path pathLength="100" d="M${x1
 const centre = i => [(i % 3 + .5) * 100 / 3, (Math.floor(i / 3) + .5) * 100 / 3];
 
 let ik, room = null;          // the SDK, and the online room while in one
-let myName = "";              // the signed-in player's name on Ikirmikir, if any
+let myName = "", guestName = "", signedIn = false, inviteCode = "", autoRotate = false, roomBusy = false, roomToken = 0, confirmAction = null, resultAt = 0, replayTimer = 0;              // the signed-in player's name on Ikirmikir, if any
 let online = false, me = "X"; // in an online game: which mark is mine
 let board = Array(9).fill(""), round = 0, turn = "X", over = false, wins = { X: 0, O: 0 };
 
@@ -38,7 +38,8 @@ async function main() {
   $("online").hidden = !canPlayOnline;
   $("offlineNote").hidden = canPlayOnline;
   ik.game.loadingDone();                                                  // SDK: Ikirmikir hides its loader
-  try { myName = (await ik.player.get())?.name ?? "" } catch {}           // SDK 1.3: a signed-in player's name, for rooms
+  try { identify(await ik.player.get()) } catch {}
+  ik.on("player", identify);           // SDK 1.3: a signed-in player's name, for rooms
   ik.on("pause", () => { if (playingNow()) clock.stop() });               // SDK: the player left the game
   ik.on("resume", () => { if (playingNow()) clock.start() });
 
@@ -48,29 +49,33 @@ async function main() {
   // SDK: menu buttons make Ikirmikir's own click (it follows Ikirmikir's sound switch); the board has its pencil sound
   addEventListener("pointerdown", e => { if (e.target.closest?.("button:not(.cell)")) ik.sound.play("click") });
 
-  $("toCreate").onclick = () => { $("name").value = myName || savedName() || newName(); show("create") };
-  $("toJoin").onclick = () => { $("code").value = ""; show("join") };
-  for (const b of document.querySelectorAll(".back")) b.onclick = () => show(b.dataset.to);
+  $("toCreate").onclick = () => { $("name").value = myName || guestName || savedName() || ""; say("createMsg", ""); show("create") };
+  for (const b of document.querySelectorAll(".back")) b.onclick = () => { cancelEntry(); show(b.dataset.to) };
   $("create-go").onclick = create;
   $("name").onkeydown = e => { if (isEnter(e)) create() };
-  $("join-go").onclick = toJoinName;
-  $("code").onkeydown = e => { if (isEnter(e)) toJoinName() };
   $("play-go").onclick = join;
   $("name2").onkeydown = e => { if (isEnter(e)) join() };
-  $("name2").oninput = () => say("joinNameMsg", `Joining room ${$("code").value}. Your friend will see this name.`);
-  $("code").oninput = () => { $("code").value = $("code").value.toUpperCase().replace(/[^A-Z0-9]/g, ""); say("joinMsg", "Ask your friend for their 5-letter code.") };
-  $("name").oninput = () => say("createMsg", "Friends will see this name. Change it if you like.");
-  $("local").onclick = () => { online = false; wins = { X: 0, O: 0 }; startRound(0) };
+  $("name2").oninput = () => say("joinNameMsg", "Your friend will see this name.");
+  $("name").oninput = () => say("createMsg", "");
+  $("local").onclick = () => { online = false; autoRotate=mobileTable(); wins = { X: 0, O: 0 }; startRound(0) };
   $("invite").onclick = () => room?.invite();                             // SDK: share sheet with the invite link
   $("cancel").onclick = leaveGame;
-  $("again").onclick = () => { if (online) room.send({ t: "again", round: round + 1 }); startRound(round + 1) };
+  $("again").onclick = () => { if(Date.now()-resultAt<900)return; if (online) room.send({ t: "again", round: round + 1 }); startRound(round + 1) };
 
   // SDK: someone opened an invite link to a room, so join it straight away
-  if (ik.multiplayer.invite) { $("code").value = ik.multiplayer.invite; toJoinName() }
+  if (ik.multiplayer.invite) { inviteCode=ik.multiplayer.invite; toJoinName() }
   else show("home");
+  $("auto-rotate").onclick=()=>{autoRotate=!autoRotate;render();};
+  $("menu").onclick=()=>over?leaveGame():confirmRound('Return to the lobby?',online?'You will leave this room.':'This round will be cleared.','Leave round',leaveGame);
+  $("resign").onclick=()=>{if(over||online&&turn!==me)return;confirmRound('Call it a round?',`${nameOf(turn==='X'?'O':'X')} will win this round.`,'Resign',()=>{const mark=online?me:turn;if(online)room.send({t:'resign',round,mark});resignRound(mark);});};
+  $("invite-play").onclick=()=>room?.invite();
+  $("keep").onclick=()=>$("confirm-dialog").close();
+  $("confirm").onclick=()=>{const run=confirmAction;$("confirm-dialog").close();run?.();};
+  $("confirm-dialog").addEventListener('close',()=>{confirmAction=null;});
 }
 
-function leaveGame() { room?.leave(); room = null; clock.stop(); show("home") }
+function cancelEntry(){roomToken++;roomBusy=false;for(const b of document.querySelectorAll("#create-go, #play-go"))b.disabled=false;for(const id of ["createMsg","joinNameMsg"])$(id).classList.remove("room-pending");}
+function leaveGame() { cancelEntry();clearTimeout(replayTimer);room?.leave(); room = null; clock.stop(); show("home") }
 
 // Play time for a whole match, not each round (Maruf, 2026-11-12): one round of noughts and crosses is often shorter
 // than the 20 seconds Ikirmikir needs to count a round, so the clock runs from the first round of a match until you
@@ -85,48 +90,40 @@ const clock = (() => {
 })();
 const playingNow = () => document.body.classList.contains("playing") && !over;
 
-// ---------- names ----------
+const mobileTable=()=>matchMedia('(any-pointer: coarse)').matches;
+function identify(player){signedIn=!!player?.signedIn;myName=signedIn?player.name||'':'';guestName=signedIn?'':player?.name||'';for(const id of ['name','name2']){$(id).hidden=signedIn;if(myName||!$(id).value)$(id).value=myName||guestName||savedName();}}
+function confirmRound(title,text,label,run){confirmAction=run;$("confirm-title").textContent=title;$("confirm-copy").textContent=text;$("confirm").textContent=label;$("confirm-dialog").showModal();}
+function resignRound(mark){if(over)return;const winner=mark==='X'?'O':'X';over={winner,resignation:true};wins[winner]++;if(online&&winner===me)countWin();gameOff();render();}
+// Guest names from the platform are editable; old standalone names remain a fallback.
 function savedName() { try { return localStorage.getItem("kata-kuti-name") ?? "" } catch { return "" } }
-function newName() { return "usr_" + Array.from(crypto.getRandomValues(new Uint8Array(7)), b => "abcdefghijklmnopqrstuvwxyz0123456789"[b % 36]).join("") }
-
-// the typed name, tidied and remembered; null (with the reason shown) when it isn't allowed
-function takeName(input, msg) {
-  const name = $(input).value.trim().replace(/\s+/g, " ");
-  if (!NAME_RULE.test(name)) { say(msg, "Use letters, numbers, spaces, _ or -, up to 16.", true); return null }
-  try { localStorage.setItem("kata-kuti-name", name) } catch {}
-  return name;
-}
+function takeName(input,msg){const name=(myName||$(input).value).trim().replace(/\s+/g,' ');if(name&&!NAME_RULE.test(name)){say(msg,'Use up to 16 letters, numbers, spaces, _ or -.',true);return null;}if(name&&!signedIn)try{localStorage.setItem('kata-kuti-name',name)}catch{}return name;}
 
 // ---------- online ----------
 function create() {
+  if(roomBusy)return;
   const name = takeName("name", "createMsg");
-  if (name) enter(ik.multiplayer.create({ maxPlayers: 2, name }), "createMsg", "Making a room…");
+  if (name!==null) enter(ik.multiplayer.create({ maxPlayers: 2, name }), "createMsg", "Making a room…");
 }
 
 // a code that looks right: ask for the name next
-function toJoinName() {
-  const code = $("code").value.trim().toUpperCase();
-  if (code.length !== 5) return say("joinMsg", "Room codes have 5 letters and numbers.", true);
-  $("code").value = code;
-  $("name2").value = myName || savedName() || newName();
-  say("joinNameMsg", `Joining room ${code}. Your friend will see this name.`);
-  show("joinName");
+function toJoinName(){
+  if(!/^[A-HJ-NP-Z2-9]{5}$/.test(inviteCode)){show('home');say('homeMsg','That invite code is not valid.',true);return;}
+  $("name2").value=myName||guestName||savedName();say('joinNameMsg','');show('joinName');
 }
-
-async function join() {
-  const name = takeName("name2", "joinNameMsg");
-  if (!name) return;
-  const joined = await enter(ik.multiplayer.join($("code").value, { name }), "joinNameMsg", "Joining…"); // SDK: join a friend's room
-  if (!joined) { show("join"); say("joinMsg", $("joinNameMsg").textContent, true) } // a room that's gone or full: back to the code
+async function join(){
+  if(roomBusy)return;const name=takeName('name2','joinNameMsg');if(name===null)return;
+  await enter(ik.multiplayer.join(inviteCode,{name}),'joinNameMsg','Joining room');
 }
 
 // Who plays which mark: the player already in the room keeps theirs and tells whoever comes in to take the other
 // one. (Deciding by the order of the player list broke when the room's maker left and came back: both picked the
 // same mark and nobody could move.)
 async function enter(request, msg, waitText) {
-  say(msg, waitText);
+  const token=++roomToken;roomBusy=true;say(msg,waitText);$(msg).classList.add("room-pending");
   for (const b of document.querySelectorAll("#create-go, #play-go")) b.disabled = true;
-  const r = await request;
+  let r;try{r=await request;}catch{r={error:"unavailable"};}
+  if(token!==roomToken){r.room?.leave();return;}
+  roomBusy=false;$(msg).classList.remove("room-pending");
   for (const b of document.querySelectorAll("#create-go, #play-go")) b.disabled = false;
   if (r.error) return void say(msg, {
     "not-found": "That room doesn't exist, or it has closed.",
@@ -144,6 +141,7 @@ async function enter(request, msg, waitText) {
   room.on("back", () => { say("notice", ""); room.send({ t: "state", board, round, turn, over, wins }) }); // catch them up
   room.on("status", s => say("notice", s === "reconnecting" ? "Reconnecting…" : s === "closed" ? "Connection lost." : ""));
   room.on("message", (m, from) => {
+    if(m?.t === "resign"&&m.round===round&&m.mark===(me==='X'?'O':'X')&&from.id===opponent()?.id){resignRound(m.mark);return;}
     if (m?.t === "move") play(m.cell, from);
     else if (m?.t === "start" && (m.you === "X" || m.you === "O")) { me = m.you; say(msg, ""); startRound(0) }
     else if (m?.t === "again" && m.round === round + 1) startRound(m.round);
@@ -156,6 +154,7 @@ async function enter(request, msg, waitText) {
 
 // ---------- the game ----------
 function startRound(r) {
+  clearTimeout(replayTimer);$("again").disabled=false;
   round = r; board = Array(9).fill(""); turn = r % 2 ? "O" : "X"; over = false;
   say("notice", ""); $("again").hidden = true;
   show("play"); render();
@@ -163,7 +162,7 @@ function startRound(r) {
 }
 
 function tap(cell) {
-  if (over || board[cell] || (online && turn !== me)) return;
+  if (document.querySelector("dialog[open]") || over || board[cell] || (online && turn !== me)) return;
   if (online) room.send({ t: "move", cell });                             // SDK: send the move to the other phone
   play(cell);
 }
@@ -181,7 +180,7 @@ function play(cell, from) {
   render();
 }
 
-function gameOff() { clock.between(); $("again").hidden = false }
+function gameOff(){clock.between();resultAt=Date.now();$("again").hidden=false;$("again").disabled=true;clearTimeout(replayTimer);replayTimer=setTimeout(()=>{$("again").disabled=false;},900);}
 
 // Online wins, kept with the player's saves on Ikirmikir; the tenth earns the Kata-kuti champ badge. (Wins on one
 // device don't count: you would be playing yourself.)
@@ -202,6 +201,9 @@ const nameOf = mark => !online ? (mark === "X" ? "Cross" : "Nought") : mark === 
 
 let lastTurnText = "";
 function render() {
+  $("play").classList.toggle('table-flipped',!online&&autoRotate&&mobileTable()&&turn==='O');
+  $("auto-rotate").hidden=online||!mobileTable();$("auto-rotate").setAttribute('aria-pressed',String(autoRotate));$("auto-rotate").innerHTML=`<span class="rotate-symbol" aria-hidden="true">↻</span><span>Auto: ${autoRotate?'on':'off'}</span>`;
+  $("invite-play").hidden=!online;$("resign").hidden=!!over;$("resign").disabled=online&&turn!==me;
   const mine = online && !over && turn === me;
   for (const m of ["X", "O"]) {
     const side = $(`side${m}`);
@@ -298,7 +300,7 @@ function show(id) {
     else if (!on) s.hidden = true;
   }
   // the screen's field gets focus at once, in the same moment as the tap, so phones keep their keyboard open
-  const field = $(id).querySelector("input");
+  const field = $(id).querySelector("input:not([hidden])");
   if (field) { field.focus({ preventScroll: true }); field.select() }
 }
 const isEnter = e => e.key === "Enter" || e.keyCode === 13;

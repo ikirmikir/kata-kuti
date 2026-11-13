@@ -1,0 +1,36 @@
+
+/* Chokkor's paper-and-pencil menus and quiet game toolbar. Kept local to this game. */
+:root{--hand:Kalam,cursive;--body:Outfit,system-ui,sans-serif;--hl:#ffd60a7a;--graphite:#4b4b55}
+.menu{width:100%;max-width:460px;padding:26px 20px;margin:auto;display:flex;flex-direction:column;gap:18px;text-align:left}
+#home{text-align:center;gap:12px}#home h1{font:700 clamp(52px,12vw,70px)/1.05 var(--hand);letter-spacing:-2px;margin:0}
+#home .cover,#home .logo{width:230px;height:145px;max-width:100%;margin:10px auto 0;transform:none;flex:none}
+#home .tagline,#home #tagline{font:400 22px/1.35 var(--hand);margin:4px 0 0;color:var(--ink)}
+.menu-actions{display:flex;flex-direction:column;gap:13px;margin:12px 0 0}.choice{display:flex;align-items:center;gap:16px;min-height:80px;width:100%;padding:15px 16px;border:2px solid var(--ink);border-radius:18px 7px 16px 9px;background:#fffdf8;box-shadow:3px 3px 0 var(--ink);text-align:left}
+.choice:first-child{background:#fff3bc}.choice>span:nth-child(2){flex:1}.choice strong{display:block;font:600 16px/1.4 var(--body)}.choice small{display:block;margin-top:4px;color:var(--muted);font:400 12px/1.4 var(--body)}
+.choice-symbol{display:grid;place-items:center;width:38px;height:38px;flex:none;border:1px solid #bfb6a0;border-radius:12px 7px;background:var(--paper)}.choice-symbol svg{display:block;width:25px;height:25px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.menu .back{align-self:flex-start;width:44px;height:44px;padding:0;display:grid;place-items:center;text-decoration:none;border:1.5px solid #b1aca2;border-radius:10px 5px 8px 6px;background:var(--paper);font:700 24px var(--hand)}
+.menu h2{font:700 38px/1.13 var(--hand);margin:0;text-align:left}.menu .eyebrow{font:500 11px var(--body);letter-spacing:.16em;color:var(--muted)}
+#saved:empty,#homeMsg:empty,#english:empty,.notice:empty{display:none}.room-code,.code{font:700 48px var(--hand);letter-spacing:.15em;text-align:center;border:2px dashed #8d8d96;border-radius:18px 7px 16px 9px;padding:17px 10px 9px;background:#fff}
+.game-toolbar{display:flex!important;align-items:center;justify-content:space-between;gap:8px;min-height:56px;padding:6px 0!important;margin:0 0 10px!important;border-bottom:1px dashed #c9c1b1;flex:none}
+.toolbar-right{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-left:auto}
+.game-toolbar button.text{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px;width:auto;padding:0 6px;border:0;border-radius:6px;background:none;box-shadow:none;color:var(--graphite);font:500 14px/1 var(--body);text-decoration:none;transform:none;white-space:nowrap}
+.game-toolbar button.text:hover:not(:disabled){background:#1e1e2407;transform:none}.game-toolbar svg{display:block;width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex:none}.game-toolbar span{line-height:1;display:inline-flex;align-items:center}
+.game-toolbar #resign{color:#8d5149}.game-toolbar #auto-rotate .rotate-symbol{font:400 19px/1 var(--body);width:16px}.game-toolbar #auto-rotate::after{content:'';width:5px;height:5px;background:#aaa497;border-radius:50%}.game-toolbar #auto-rotate[aria-pressed=true]::after{background:#596b35}
+.table-flipped{transform:rotate(180deg)}
+dialog{width:calc(100% - 28px);max-width:420px;padding:22px;border:2px solid var(--ink);border-radius:18px 7px 16px 9px;background:var(--paper);color:var(--ink);box-shadow:5px 6px 0 #1e1e2440}
+dialog::backdrop{background:#24221c66;backdrop-filter:blur(3px)}dialog h2{font:700 27px/1.2 var(--hand);margin:4px 0 14px}.confirm-actions{display:flex;gap:10px;margin-top:25px}.confirm-actions button{flex:1;min-width:0;min-height:48px;height:auto;padding:10px 8px;font:550 14px var(--body);white-space:nowrap;border:2px solid var(--ink);border-radius:12px 5px 11px 6px;box-shadow:2px 2px 0 var(--ink)}
+.room-loading{display:flex;align-items:center;justify-content:center;gap:10px;color:var(--muted);font:400 14px var(--body);min-height:36px}.loading-pieces{display:inline-flex;gap:5px}.loading-pieces i{display:block;width:9px;height:9px;border:1px solid currentColor;border-radius:50%;background:#1e1e2420;animation:piece-ready 1.4s ease-in-out infinite}.loading-pieces i:nth-child(2){animation-delay:.2s}.loading-pieces i:nth-child(3){animation-delay:.4s}
+.waiting-seats{display:flex;justify-content:center;gap:16px;margin:6px 0}.waiting-seats i{display:block;width:36px;height:36px;border:2px dashed #1e1e2440;border-radius:50%;animation:piece-ready 1.5s ease-in-out infinite}.waiting-seats i:first-child{border-style:solid;border-color:var(--red);background:#b4231815;animation:none}
+#online-fields{display:grid;gap:12px}#online-fields label{margin:0;font-size:13px}#online-fields input{width:100%;min-height:52px;font-size:16px}#room-error{color:var(--red);font-size:14px}#room-error:empty{display:none}
+@keyframes piece-ready{0%,100%{opacity:.3}50%{opacity:1}}
+@media(max-width:420px){.game-toolbar button.text{font-size:13px}.toolbar-right{gap:4px}.game-toolbar #auto-rotate{font-size:13px}}
+@media(prefers-reduced-motion:reduce){.loading-pieces i,.waiting-seats i{animation:none}}
+
+#app>#home,#app>#create,#app>#joinName,#app>#waiting{max-width:460px}
+#home .menu-actions #online{display:contents}.backdrop{opacity:.07}#home .tagline{font:400 22px/1.35 var(--hand);margin:4px 0}
+#play.game{grid-template-columns:1fr;grid-template-rows:56px 58px minmax(0,1fr) auto;grid-template-areas:'navigation' 'top' 'arena' 'again';gap:10px;padding:0 16px 12px}
+#play .game-toolbar{grid-area:navigation;margin:0!important}.again-row:has([hidden]){display:none}.room-pending{display:flex;align-items:center;justify-content:center;gap:10px}.room-pending::before{content:'•••';letter-spacing:3px;animation:piece-ready 1.4s ease-in-out infinite}
+@media(orientation:landscape) and (max-height:520px){#play.game{grid-template-columns:minmax(0,1fr) minmax(0,1.2fr) minmax(0,1fr);grid-template-rows:56px 48px minmax(0,1fr);grid-template-areas:'navigation navigation navigation' 'top top top' 'arena arena again'}}
+@media(prefers-reduced-motion:reduce){.room-pending::before{animation:none}}
+
+#play.game{max-width:1060px;margin:0 auto}#create input,#joinName input{border:1.5px solid var(--pencil);border-radius:8px;padding:0 12px;font-size:16px}#create input:focus-visible,#joinName input:focus-visible{outline:3px solid var(--blue);outline-offset:3px}
